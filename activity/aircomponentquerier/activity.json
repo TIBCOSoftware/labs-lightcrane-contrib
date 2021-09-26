@@ -1,0 +1,41 @@
+{
+    "name": "aircomponentquerier",
+    "version": "1.0.0",
+    "title": "Air Application Querier",
+    "author": "TIBCO Software Inc.",
+    "type": "flogo:activity",
+    "display": {
+       "category": "ModelOps",
+       "visible": true,
+       "smallIcon": "aircomponentquerier.png",
+       "description": "This activity query air pipeline compoment"
+    },
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/activity/aircomponentquerier",
+	"settings": 	[
+		{ 
+			"name": "TemplateFolder",
+			"type": "string", 
+				"required": true,
+			"display": { 
+				"name": "Template Folder",
+				"description": "Component template folder"
+			}
+		}
+	],
+    "inputs": [
+ 		{
+			"name": "Category",
+			"type": "string"
+		},
+ 		{
+			"name": "Component",
+			"type": "string"
+		}
+    ],
+	"outputs": [
+ 		{
+			"name": "Descriptor",
+			"type": "object"
+		}
+	]
+}

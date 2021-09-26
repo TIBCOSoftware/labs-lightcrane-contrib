@@ -1,0 +1,52 @@
+{
+	"name": "fileserver",
+	"type": "flogo:trigger",
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/trigger/fileserver",
+	"version": "0.0.1",
+	"title": "HTTP file server",
+	"description": "This trigger server file via HTTP protocol",
+	"homepage": "https://github.com/SteveNY-Tibco/labs-lightcrane-contrib/trigger/fileserver",
+	"display": {
+		"category": "ModelOps",
+		"visible": true,
+		"smallIcon": "fileserver.png",
+		"description": "This trigger server file via HTTP protocol"
+	},
+	"settings": [
+		{
+			"name": "Port",
+			"required": true,
+			"type": "string",
+			"display": {
+			"name": "Port",
+				"description" : "The port for the trigger to listen to"
+			}
+		}
+	],
+	"handler": {
+		"settings": [
+			{
+				"name": "URLPath",
+				"type": "string",
+				"display": {
+					"name": "URLPath",
+					"description" : "The resource path in URL"
+				}
+			},
+			{
+				"name": "Dir",
+				"type": "string",
+				"display": {
+					"name": "Dir",
+					"description" : "The file resource directory"
+				}
+			}
+		]
+	},
+	"output": [
+		{
+            "name": "RequestURL",
+            "type": "string"
+		}
+	]
+}

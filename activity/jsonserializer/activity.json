@@ -1,0 +1,57 @@
+{
+	"name": "flogo-jsonserializer",
+	"type": "flogo:activity",
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/activity/jsonserializer",
+	"version": "0.0.1",
+	"title": "JSON Serializer",
+	"display": {
+    	"category": "LC1",
+    	"visible": true,
+    	"smallIcon": "jsonserializer.png",
+  		"description": "JSON Serializer Activity"
+	},
+	"settings": [
+		{
+			"name": "schemaFromfile",
+			"type": "boolean",
+			"display": {
+				"name": "Sample Data Schema from File",
+				"description": "Select true will import schema from a JSON file"
+			},
+			"value": false
+		},
+		{ 
+			"name": "sample",
+			"type": "string", 
+			"required": true,
+			"display": { 
+				"name": "JSON Data Sample",
+				"description": "Define JSON schema for input data", 
+				"type": "fileselector", 
+				"fileExtensions": [".json"] 
+			} 
+		},
+    	{
+			"name": "dataSample",
+			"type": "complex_object",
+			"display": {
+				"name": "JSON Data Sample",
+				"description": "Define JSON schema for input data",
+				"type": "texteditor",
+				"syntax": "json"
+			}
+		}
+	],
+	"input":[
+		{
+			"name": "Data",
+			"type": "complex_object"
+		}
+	],
+	"output": [
+		{
+			"name": "JSONString",
+			"type": "string"
+		}
+	]
+}

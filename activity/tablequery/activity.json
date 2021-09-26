@@ -1,0 +1,53 @@
+{
+	"name": "flogo-tablequery",
+	"type": "flogo:activity",
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/activity/tablequery",
+	"version": "0.0.1",
+	"title": "Table Query",
+	"display": {
+    		"category": "LC1",
+    		"visible": true,
+    		"smallIcon": "tablequery.png",
+  		"description": "A simple activity for quering data from table"
+	},
+	"settings": [
+		{
+			"name": "Table",
+			"type": "object",
+			"required": true,
+			"display": {
+				"name": "Table Name",
+				"description": "Select table for upserting",
+				"type": "connection"
+			},
+			"allowed": []
+		},
+		{
+			"name": "Indices",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Query Indices",
+				"description": "Select index for query",
+				"type": "string"
+			},
+			"allowed": []
+		}
+	],
+	"input":[
+		{
+			"name": "QueryKey",
+			"type": "complex_object"
+		}
+	],
+	"output": [
+		{
+            "name": "Data",
+            "type": "complex_object"
+		},
+		{
+            "name": "Exists",
+            "type": "boolean"
+		}
+	]
+}

@@ -1,0 +1,54 @@
+{
+	"name": "flogo-tablemutate",
+	"type": "flogo:activity",
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/activity/tablemutate",
+	"version": "0.0.1",
+	"title": "Table Mutate",
+	"display": {
+    		"category": "LC1",
+    		"visible": true,
+    		"smallIcon": "tablemutate.png",
+  		"description": "A simple activity for upserting/deleting data to/from table"
+	},
+	"settings": [
+		{
+			"name": "Table",
+			"type": "object",
+			"required": true,
+			"display": {
+				"name": "Table Name",
+				"description": "Select table for upserting",
+				"type": "connection"
+			},
+			"allowed": []
+		},
+		{
+			"name": "Method",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Execution Method",
+				"description": "Execution Method",
+				"type": "string"
+			},
+			"allowed": ["upsert", "delete"],
+			"default": "upsert"
+		}
+	],
+	"input":[
+		{
+			"name": "Mapping",
+			"type": "complex_object"
+		}
+	],
+	"output": [
+		{
+            "name": "Data",
+            "type": "complex_object"
+		},
+		{
+            "name": "Exists",
+            "type": "boolean"
+		}
+	]
+}

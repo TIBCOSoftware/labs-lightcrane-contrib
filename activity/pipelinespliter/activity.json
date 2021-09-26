@@ -1,0 +1,45 @@
+{
+    "name": "pipelinespliter",
+    "version": "1.0.0",
+    "title": "Pipeline Spliter",
+    "author": "TIBCO Software Inc.",
+    "type": "flogo:activity",
+    "display": {
+       "category": "ModelOps",
+       "visible": true,
+       "smallIcon": "pipelinespliter.png",
+       "description": "This activity split flogo flow pipeline"
+    },
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/activity/pipelinespliter",
+	"settings": 	[{ 
+		"name": "Template",
+		"type": "string", 
+		"required": true,
+		"display": { 
+			"name": "Component Template",
+			"description": "Component template for a pipeline", 
+			"type": "fileselector", 
+			"fileExtensions": [".json"] 
+		} 
+	}],
+    "inputs": [
+ 		{
+			"name": "RawPipelineConfig",
+			"type": "string"
+		}
+    ],
+	"outputs": [
+ 		{
+			"name": "ID",
+			"type": "string"
+		},
+ 		{
+			"name": "DataFlow",
+			"type": "complex_object"
+		},
+ 		{
+			"name": "PipelineConfig",
+			"type": "complex_object"
+		}
+	]
+}

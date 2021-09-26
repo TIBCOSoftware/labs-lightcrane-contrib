@@ -1,0 +1,68 @@
+{
+	"name": "flogo-objectmaker",
+	"type": "flogo:activity",
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/activity/objectmaker",
+	"version": "0.0.1",
+	"title": "LC1",
+	"display": {
+    		"category": "LC1",
+    		"visible": true,
+    		"smallIcon": "objectmaker.png",
+  		"description": "Make an New Object"
+	},
+	"settings": [
+		{
+			"name": "schemaFromfile",
+			"type": "boolean",
+			"display": {
+				"name": "Sample Data Schema from File",
+				"description": "Select true will import schema from a JSON file"
+			},
+			"value": false
+		},
+		{ 
+			"name": "sample",
+			"type": "string", 
+			"required": true,
+			"display": { 
+				"name": "JSON Data Sample",
+				"description": "Define JSON schema for output data", 
+				"type": "fileselector", 
+				"fileExtensions": [".json"] 
+			} 
+		},
+    	{
+			"name": "dataSample",
+			"type": "complex_object",
+			"display": {
+				"name": "JSON Data Sample",
+				"description": "Define JSON schema for output data",
+				"type": "texteditor",
+				"syntax": "json"
+			}
+		},
+		{
+			"name": "defaultValue",
+			"type": "array",
+			"required": false,
+			"display": {
+				"name": "Default Values",
+				"description": "Default value for JSON attributes",
+				"type": "table",
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"AttributePath\": {\r\n                \"id\": \"\/items\/properties\/AttributePath\",\r\n                \"type\": \"string\"\r\n            },\r\n         \"Default\": {\r\n                \"id\": \"\/items\/properties\/Default\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"Type\": {\r\n                \"id\": \"\/items\/properties\/Type\",\r\n                \"type\": {\"enum\":[\"String\", \"Integer\", \"Long\", \"Double\", \"Boolean\", \"Date\"]}\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
+			}
+		}
+	],
+	"input":[
+		{
+			"name": "ObjectDataMapping",
+			"type": "object"
+		}
+	],
+	"output": [
+		{
+			"name": "ObjectOut",
+			"type": "object"
+		}
+	]
+}

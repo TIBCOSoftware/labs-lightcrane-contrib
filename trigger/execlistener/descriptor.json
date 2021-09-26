@@ -1,0 +1,35 @@
+{
+	"name": "execlistener",
+	"type": "flogo:trigger",
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/trigger/execlistener",
+	"version": "0.0.1",
+	"title": "ExecEventListener",
+	"description": "Exec event listener",
+	"display": {
+		"category": "LC1",
+		"visible": true,
+		"smallIcon": "execlistener.png",
+		"description": "This trigger serves server-sent events"
+	},
+    "outputs": [
+		{
+            "name": "Event",
+            "type": "object"
+		}
+    ],
+	"handler": {
+		"settings": [
+			{
+        		"name": "eventBoker",
+        		"type": "string",
+        		"required": true,
+        		"display":{
+        			"name": "Execution Event Broker",
+        			"description": "Select Execution Event Broker",
+        			"type": "string"
+        		},
+        		"allowed":[]
+			}
+		]
+	}
+}

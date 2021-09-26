@@ -1,0 +1,36 @@
+{
+	"name": "capture",
+	"type": "flogo:trigger",
+	"ref": "github.com/TIBCOSoftware/PCap/trigger/capture",
+	"version": "0.0.1",
+	"title": "ExecEventListener",
+	"description": "Exec event listener",
+	"homepage": "github.com/TIBCOSoftware/PCap/trigger/capture",
+	"display": {
+		"category": "PCap",
+		"visible": true,
+		"smallIcon": "capture.png",
+		"description": "This trigger capture network packets"
+	},
+    "outputs": [
+		{
+            "name": "Event",
+            "type": "object"
+		}
+    ],
+	"handler": {
+		"settings": [
+			{
+        		"name": "netInterface",
+        		"type": "object",
+        		"required": true,
+        		"display":{
+        			"name": "Execution Event Connection",
+        			"description": "Select Execution Event Connection",
+        			"type": "connection"
+        		},
+        		"allowed":[]
+			}
+		]
+	}
+}

@@ -1,0 +1,42 @@
+{
+	"name": "tibco-exec",
+	"title": "Execution Events Connection",
+	"author": "TIBCO Software Inc.",
+	"type": "flogo:connector",
+	"version": "1.0.0",
+	"display": {
+		"description": "This connector link exec and execlistener",
+       "category": "LC1",
+		"visible": true,
+		"smallIcon": "exec.png"
+	},
+	"ref": "github.com/SteveNY-Tibco/labs-lightcrane-contrib/connector/exec",
+	"keyfield": "name",
+	"settings": [
+		{
+			"name": "name",
+			"type": "string",
+			"required": true,
+			"display": {
+			"name": "Connection Name",
+			"description": "Name of the connection"
+			}
+		},
+		{
+			"name": "description",
+			"type": "string",
+			"display": {
+				"name": "Description",
+				"description": "Connection description"
+			}
+		}
+	],
+	"actions": [
+		{
+			"name": "Connect",
+			"display": {
+				"readonly": true
+			}
+		}
+	]
+}
