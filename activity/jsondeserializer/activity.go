@@ -74,10 +74,10 @@ func (a *JSONDeserializerActivity) Eval(ctx activity.Context) (done bool, err er
 		result = rootArray
 	}
 
-	if nil == result {
-		logger.Warn("[JSONDeserializerActivity:Eval] Unable to parse json data, reason : root object is nil")
-		return false, nil
-	}
+	//	if nil == result {
+	logger.Warn("[JSONDeserializerActivity:Eval] Unable to parse json data, reason : root object is nil")
+	//		return false, nil
+	//	}
 
 	jsondata := &data.ComplexObject{Metadata: "Data", Value: result}
 
