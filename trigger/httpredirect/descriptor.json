@@ -1,0 +1,63 @@
+{
+    "name": "httpredirect",
+    "type": "flogo:trigger",
+    "ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/trigger/httpredirect",
+    "version": "0.0.1",
+    "title": "HTTP Redirect",
+    "description": "This trigger redirects HTTP request",
+    "homepage": "https://github.com/TIBCOSoftware/labs-lightcrane-contrib/trigger/httpredirect",
+    "display": {
+        "category": "ModelOps",
+        "visible": true,
+        "smallIcon": "httpredirect.png",
+        "description": "This trigger redirect http request"
+    },
+    "settings": [
+        {
+            "name": "Port",
+            "required": true,
+            "type": "string",
+            "display": {
+                "name": "Port",
+                "description": "The port for the trigger to listen to"
+            }
+        }
+    ],
+    "output": [
+        {
+            "name": "RequestURL",
+            "type": "string"
+        }
+    ],
+    "reply": [
+        {
+            "name": "code",
+            "type": "int",
+            "description": "The http code to reply with"
+        },
+        {
+            "name": "data",
+            "type": "complex_object",
+            "display": {
+                "name": "Reply Data Schema",
+                "description": "The reply data schema of the trigger",
+                "type": "texteditor",
+                "syntax": "json",
+                "mappable": true
+            }
+        }
+    ],
+    "handler": {
+        "settings": [
+            {
+                "name": "Path",
+                "required": true,
+                "type": "string",
+                "display": {
+                    "name": "Path",
+                    "description": "The resource path you have selected. Use {} to configure path parameters. e.g. /users/{id}"
+                }
+            }
+        ]
+    }
+}

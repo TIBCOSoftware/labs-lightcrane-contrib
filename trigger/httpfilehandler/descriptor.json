@@ -1,0 +1,76 @@
+{
+	"name": "http-filehandler",
+	"type": "flogo:trigger",
+	"version": "0.0.1",
+	"title": "HTTPFileHandler",
+	"description": "HTTP File Handler",
+	"ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/trigger/httpfilehandler",
+	"homepage": "https://github.com/TIBCOSoftware/labs-lightcrane-contrib/trigger/httpfilehandler",
+	"display": {
+		"category": "GraphBuilder_Tools",
+		"visible": true,
+		"smallIcon": "httpfilehandler.png",
+		"description": "This activity read file and pass string content to downstream"
+	},
+	"settings": [
+    	{
+			"name": "Port",
+			"required": true,
+			"type": "string",
+			"display": {
+			"name": "Port",
+			"description" : "The port for the trigger to listen to"
+			}
+		}
+	],
+	"handler": {
+		"settings": [
+			{
+				"name": "Path",
+				"required": true,
+				"type": "string",
+				"display": {
+					"name": "Path",
+					"description" : "The resource path you have selected. Use {} to configure path parameters. e.g. /users/{id}"
+				}
+			},
+			{
+				"name": "BaseFolder",
+				"required": true,
+				"type": "string",
+				"display": {
+					"name": "BaseFolder",
+					"description" : "The folder which files would be stored."
+				}
+			}
+		]
+	},
+	"output": [
+		{
+			"name": "Filename",
+			"type": "string"
+		},
+		{
+			"name": "FilePath",
+			"type": "string"
+		}
+	],
+	"reply": [
+		{
+			"name": "code",
+			"type": "int",
+			"description": "The http code to reply with"
+		},
+		{
+			"name": "data",
+			"type": "complex_object",
+			"display": {
+				"name": "Reply Data Schema",
+				"description": "The reply data schema of the trigger",
+				"type": "texteditor",
+				"syntax": "json",
+				"mappable": true
+			}
+		}
+	]
+}

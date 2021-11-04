@@ -1,0 +1,122 @@
+{
+    "name": "exec",
+    "version": "1.0.0",
+    "title": "Exec Command",
+    "author": "TIBCO Software Inc.",
+    "type": "flogo:activity",
+    "display": {
+       "category": "LC1",
+       "visible": true,
+       "smallIcon": "exec.png",
+       "description": "This activity build docker image from Dockerfile"
+    },
+	"ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/activity/exec",
+	"settings": [
+		{
+        		"name": "execConnection",
+        		"type": "object",
+        		"required": false,
+        		"display":{
+        			"name": "Execution Event Connection",
+        			"description": "Select Execution Event Connection",
+        			"type": "connection"
+        		},
+        		"allowed":[]
+		},
+		{
+			"name": "workingFolder",
+			"type": "string",
+			"required": false,
+			"display": {
+				"name": "Working Folder",
+				"description": "Working Folder of executions"
+			}
+		},
+		{
+			"name": "numOfExecutions",
+			"type": "integer",
+			"required": true,
+			"display": {
+				"name": "Number of executions",
+				"description": "Number of executions"
+			}
+		},
+		{
+			"name": "leftToken",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Variable Left Token",
+				"description": "The left token around variable"
+			}
+		},
+		{
+			"name": "rightToken",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Variable Right Token",
+				"description": "The right token around variable"
+			}
+		},
+		{
+			"name": "variablesDef",
+			"type": "array",
+			"required": false,
+			"default": 0,
+			"display": {
+				"name": "Define Variables",
+				"description": "Name and type of input variables",
+				"type": "table",
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"Name\": {\r\n                \"id\": \"\/items\/properties\/Name\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"Type\": {\r\n                \"id\": \"\/items\/properties\/Type\",\r\n                \"type\": {\"enum\":[\"String\", \"Integer\", \"Long\", \"Double\", \"Boolean\", \"Date\"]}\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
+			}
+		},
+		{
+			"name": "SystemEnv",
+			"type": "array",
+			"required": false,
+			"display": {
+				"name": "System Env.",
+				"description": "Define the runtime system env.",
+				"type": "table",
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"Key\": {\r\n                \"id\": \"\/items\/properties\/Key\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"Value\": {\r\n                \"id\": \"\/items\/properties\/Value\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"PerCommand\": {\r\n                \"id\": \"\/items\/properties\/PerCommand\",\r\n                \"type\": {\"enum\":[\"Yes\", \"No\"]}\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
+			}
+		}
+    ],
+    "inputs": [
+ 		{
+			"name": "Executable",
+			"type": "object"
+		},
+		{
+			"name": "Asynchronous",
+			"type": "boolean"
+		},
+		{
+            "name": "Variables",
+            "type": "object"
+		},
+		{
+            "name": "SkipCondition",
+            "type": "boolean"
+		}
+    ],
+	"outputs": [
+ 		{
+			"name": "Success",
+			"type": "bool"
+		},
+ 		{
+			"name": "Message",
+			"type": "object"
+		},
+ 		{
+			"name": "ErrorCode",
+			"type": "int"
+		},
+ 		{
+			"name": "Result",
+			"type": "array"
+		}
+	]
+}

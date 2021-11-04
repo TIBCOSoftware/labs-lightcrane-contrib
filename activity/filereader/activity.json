@@ -1,0 +1,36 @@
+{
+    "name": "filereader",
+    "version": "1.0.0",
+    "author": "TIBCO Software Inc.",
+    "type": "flogo:activity",
+    "title": "File Reader",
+    "display": {
+        "category": "LC1",
+        "visible": true,
+        "smallIcon": "filereader.png",
+        "description": "This activity write incoming object to file system"
+    },
+    "ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/activity/filereader",
+    "settings": [
+        {
+            "name": "BaseFolder",
+            "type": "string",
+            "display": {
+                "name": "File folder",
+                "description": "Set target folder for reading file"
+            }
+        }
+    ],
+    "input": [
+        {
+            "name": "FilePattern",
+            "type": "string"
+        }
+    ],
+    "output": [
+        {
+            "name": "Results",
+            "type": "array"
+        }
+    ]
+}

@@ -1,0 +1,132 @@
+{
+    "name": "httpclient",
+    "version": "1.0.0",
+    "title": "HTTP Client",
+    "author": "TIBCO Software Inc.",
+    "type": "flogo:activity",
+    "display": {
+       "category": "LC1",
+       "visible": true,
+       "smallIcon": "httpclient.png",
+       "description": "This activity build docker image from Dockerfile"
+    },
+	"ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/activity/httpclient",
+	"settings": [
+    	{
+			"name": "method",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Method",
+				"description": "Query method",
+				"type": "string"
+			},
+			"allowed": ["GET", "POST", "PUT", "DELETE"]
+    	},
+		{
+			"name": "timeout",
+			"type": "int",
+			"required": true,
+			"display": {
+				"name": "HTTP Timeout (ms)",
+				"description": "HTTP Timeout (ms)"
+			}
+		},
+		{
+			"name": "urlMappingString",
+			"type": "string",
+			"required": false,
+			"display": {
+				"name": "URL Mapping",
+				"description": "Map URL to it's alias name",
+				"type": "string",
+				"appPropertySupport": true
+			}
+		},
+		{
+			"name": "urlMapping",
+			"type": "array",
+			"required": false,
+			"display": {
+				"name": "URL Mapping",
+				"description": "Map URL to it's alias name",
+				"type": "table",
+				"appPropertySupport": true,
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"Alias\": {\r\n                \"id\": \"\/items\/properties\/Alias\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"URL\": {\r\n                \"id\": \"\/items\/properties\/URL\",\r\n                \"type\": \"string\"\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
+			}
+		},
+		{
+			"name": "leftToken",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Variable Left Token",
+				"description": "The left token around variable"
+			}
+		},
+		{
+			"name": "rightToken",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Variable Right Token",
+				"description": "The right token around variable"
+			}
+		},
+		{
+			"name": "variablesDef",
+			"type": "array",
+			"required": false,
+			"default": 0,
+			"display": {
+				"name": "Define Variables",
+				"description": "Name and type of input variables",
+				"type": "table",
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"Name\": {\r\n                \"id\": \"\/items\/properties\/Name\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"Type\": {\r\n                \"id\": \"\/items\/properties\/Type\",\r\n                \"type\": {\"enum\":[\"String\", \"Integer\", \"Long\", \"Double\", \"Boolean\", \"Date\"]}\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
+			}
+		},
+		{
+			"name": "httpHeaders",
+			"type": "array",
+			"required": false,
+			"display": {
+				"name": "HTTP Headers",
+				"description": "Define the HTTP headers.",
+				"type": "table",
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"Key\": {\r\n                \"id\": \"\/items\/properties\/Key\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"Value\": {\r\n                \"id\": \"\/items\/properties\/Value\",\r\n                \"type\": \"string\"\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
+			}
+		}
+    ],
+    "inputs": [
+ 		{
+			"name": "URL",
+			"type": "string"
+		},
+		{
+			"name": "Body",
+			"type": "string"
+		},
+		{
+            "name": "Variables",
+            "type": "object"
+		},
+		{
+            "name": "SkipCondition",
+            "type": "boolean"
+		}
+    ],
+	"outputs": [
+ 		{
+			"name": "Success",
+			"type": "boolean"
+		},
+ 		{
+			"name": "Data",
+			"type": "string"
+		},
+ 		{
+			"name": "ErrorCode",
+			"type": "int"
+		}
+	]
+}
