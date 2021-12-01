@@ -1,5 +1,5 @@
 {
-  "name": "flogo-mqtt",
+  "name": "proj-air-docker-monitor",
   "type": "flogo:activity",
   "version": "0.1.0",
   "title": "Docker Monitor Activity",
