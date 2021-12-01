@@ -1,0 +1,42 @@
+{
+  "name": "proj-air-docker-monitor",
+  "type": "flogo:activity",
+  "version": "0.1.0",
+  "title": "Docker Monitor Activity",
+  "description": "Monitor Deployed Air-app Containers",
+  "homepage": "https://github.com/TIBCOSoftware/labs-lightcrane-contrib/activity/docker/deploymonitor",
+  "settings": [
+    {
+      "name": "id",
+      "type": "string",
+      "required": true,
+      "description": "The id of client"
+    }
+  ],
+  "input": [
+    {
+      "name": "now",
+      "type": "int",
+      "description": "Current time"
+    },
+    {
+      "name": "location",
+      "type": "string",
+      "description": "Deployment location"
+    },
+    {
+      "name": "currentDeployments",
+      "type": "array",
+      "valueType": "object",
+      "description": "Current registered deployments"
+    }
+  ],
+  "output": [
+    {
+      "name": "data",
+      "type": "array",
+      "valueType": "object",
+      "description": "Deployment Updates"
+    }
+  ]
+}
