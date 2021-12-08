@@ -14,10 +14,10 @@ import (
 	"sync"
 	"time"
 
-	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 var log = logger.GetLogger("tibco-model-ops-httpclient")
@@ -98,6 +98,7 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 	var success bool
 	var errorCode int
 	var data string
+	statusCode := 600
 	if "" != url {
 		method, exist := context.GetSetting(sMethod)
 		if !exist {
@@ -114,21 +115,21 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 		header, _ := a.getHeader(context)
 		var body []byte
 		if "GET" == method.(string) {
-			body, err = a.get(url, header, timeout)
+			body, statusCode, err = a.get(url, header, timeout)
 		} else if "DELETE" == method.(string) {
-			body, err = a.delete(url, header, timeout)
+			body, statusCode, err = a.delete(url, header, timeout)
 		} else if "POST" == method.(string) {
 			reqBody, ok := context.GetInput(iBody).(string)
 			if !ok {
 				return false, errors.New("Invalid request body ... ")
 			}
-			body, err = a.post(url, header, timeout, []byte(reqBody))
+			body, statusCode, err = a.post(url, header, timeout, []byte(reqBody))
 		} else if "PUT" == method.(string) {
 			reqBody, ok := context.GetInput(iBody).(string)
 			if !ok {
 				return false, errors.New("Invalid request body ... ")
 			}
-			body, err = a.put(url, header, timeout, []byte(reqBody))
+			body, statusCode, err = a.put(url, header, timeout, []byte(reqBody))
 		} else {
 			return false, errors.New("Query method not support!")
 		}
@@ -149,6 +150,9 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 		errorCode = 300
 	}
 
+	if 200 != statusCode {
+		success = false
+	}
 	context.SetOutput(oSuccess, success)
 	context.SetOutput(oData, data)
 	context.SetOutput(oErrorCode, errorCode)
@@ -156,13 +160,13 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 	return true, nil
 }
 
-func (a *HTTPClientActivity) get(url string, header map[string]string, timeout time.Duration) ([]byte, error) {
+func (a *HTTPClientActivity) get(url string, header map[string]string, timeout time.Duration) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:get] request url = ", url)
 	defer log.Debug("[HTTPClientActivity:get] exit ... ")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Error("[HTTPClientActivity:get] Error reading request. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	for key, value := range header {
@@ -175,27 +179,27 @@ func (a *HTTPClientActivity) get(url string, header map[string]string, timeout t
 	defer resp.Body.Close()
 	if err != nil {
 		log.Error("[HTTPClientActivity:get] Error reading response. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("[HTTPClientActivity:get] Error reading body. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 	defer log.Debug("[HTTPClientActivity:get] response body = ", string(body))
 
-	return body, nil
+	return body, resp.StatusCode, nil
 }
 
-func (a *HTTPClientActivity) delete(url string, header map[string]string, timeout time.Duration) ([]byte, error) {
+func (a *HTTPClientActivity) delete(url string, header map[string]string, timeout time.Duration) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:delete] enter, request url = ", url)
 	defer log.Debug("[HTTPClientActivity:delete] exit ... ")
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		log.Error("[HTTPClientActivity:get] Error reading request. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	for key, value := range header {
@@ -208,20 +212,20 @@ func (a *HTTPClientActivity) delete(url string, header map[string]string, timeou
 	defer resp.Body.Close()
 	if err != nil {
 		log.Error("[HTTPClientActivity:delete] Error reading response. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("[HTTPClientActivity:delete] Error reading body. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 	log.Debug("[HTTPClientActivity:delete] response body = ", string(body))
 
-	return body, nil
+	return body, resp.StatusCode, nil
 }
 
-func (a *HTTPClientActivity) post(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, error) {
+func (a *HTTPClientActivity) post(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:post] request url = ", url)
 	log.Debug("[HTTPClientActivity:post] request body = ", string(data))
 	defer log.Debug("[HTTPClientActivity:post] exit ... ")
@@ -229,7 +233,7 @@ func (a *HTTPClientActivity) post(url string, header map[string]string, timeout 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		log.Error("[HTTPClientActivity:post] Error reading request. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	for key, value := range header {
@@ -244,7 +248,7 @@ func (a *HTTPClientActivity) post(url string, header map[string]string, timeout 
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("[HTTPClientActivity:post] Error reading response. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 	defer resp.Body.Close()
 
@@ -254,14 +258,14 @@ func (a *HTTPClientActivity) post(url string, header map[string]string, timeout 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("[HTTPClientActivity:post] Error reading body. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 	log.Debug("[HTTPClientActivity:post] response body = ", string(body))
 
-	return body, nil
+	return body, resp.StatusCode, nil
 }
 
-func (a *HTTPClientActivity) put(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, error) {
+func (a *HTTPClientActivity) put(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:put] request url = ", url)
 	log.Debug("[HTTPClientActivity:put] request body = ", string(data))
 	defer log.Debug("[HTTPClientActivity:post] exit ... ")
@@ -269,7 +273,7 @@ func (a *HTTPClientActivity) put(url string, header map[string]string, timeout t
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(data))
 	if err != nil {
 		log.Error("[HTTPClientActivity:post] Error reading request. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	for key, value := range header {
@@ -284,7 +288,7 @@ func (a *HTTPClientActivity) put(url string, header map[string]string, timeout t
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("[HTTPClientActivity:put] Error reading response. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 	defer resp.Body.Close()
 
@@ -294,12 +298,12 @@ func (a *HTTPClientActivity) put(url string, header map[string]string, timeout t
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("[HTTPClientActivity:put] Error reading body. ", err)
-		return nil, err
+		return nil, 500, err
 	}
 
 	log.Debug("[HTTPClientActivity:put] response body = ", string(body))
 
-	return body, nil
+	return body, resp.StatusCode, nil
 }
 
 func (a *HTTPClientActivity) getURLMapper(ctx activity.Context) (map[string]string, error) {
