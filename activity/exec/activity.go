@@ -15,12 +15,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/exec/execeventbroker"
-	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/core/data"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/exec/execeventbroker"
+	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 var log = logger.GetLogger("tibco-f1-exec")
@@ -83,6 +83,12 @@ func (a *ExecActivity) Eval(context activity.Context) (done bool, err error) {
 	skipCondition := context.GetInput(iSkipCondition).(bool)
 	if skipCondition {
 		log.Debug("(ExecActivity.Eval) Skip taks : ", skipCondition)
+		success := true
+		message := "Command Skiped!"
+		context.SetOutput(oSuccess, success)
+		context.SetOutput(oMessage, message)
+		context.SetOutput(oErrorCode, 100)
+		context.SetOutput(oResult, make(map[string]interface{}))
 		return true, nil
 	}
 
