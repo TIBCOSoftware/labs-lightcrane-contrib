@@ -80,18 +80,6 @@ func (a *ExecActivity) Eval(context activity.Context) (done bool, err error) {
 	log.Debug("[ExecActivity.Eval] entering ........ ")
 	defer log.Debug("[ExecActivity.Eval] Exit ........ ")
 
-	skipCondition := context.GetInput(iSkipCondition).(bool)
-	if skipCondition {
-		log.Debug("(ExecActivity.Eval) Skip taks : ", skipCondition)
-		success := true
-		message := "Command Skiped!"
-		context.SetOutput(oSuccess, success)
-		context.SetOutput(oMessage, message)
-		context.SetOutput(oErrorCode, 100)
-		context.SetOutput(oResult, make(map[string]interface{}))
-		return true, nil
-	}
-
 	iAsynchronous, ok := context.GetInput(iAsynchronous).(bool)
 	if !ok {
 		iAsynchronous = false
@@ -124,6 +112,30 @@ func (a *ExecActivity) Eval(context activity.Context) (done bool, err error) {
 			variable[key] = value
 		}
 	}
+
+	eventListener, _ := a.getExecEventBroker(context)
+	execContext := map[string]interface{}{
+		"Variable":          variable,
+		"SystemEnvironment": dynSysEnvs,
+		"Successful":        true,
+		"ErrorMsg":          "",
+	}
+
+	skipCondition := context.GetInput(iSkipCondition).(bool)
+	if skipCondition {
+		log.Debug("(ExecActivity.Eval) Skip taks : ", skipCondition)
+		success := true
+		message := "Command Skiped!"
+		context.SetOutput(oSuccess, success)
+		context.SetOutput(oMessage, message)
+		context.SetOutput(oErrorCode, 100)
+		context.SetOutput(oResult, make(map[string]interface{}))
+
+		log.Debug("[ExecActivity.skipCondition] send event - execContext : ", execContext)
+		eventListener.SendEvent(execContext)
+		return true, nil
+	}
+
 	executions := executable[iExecutions].(map[string]interface{})
 	numOfExecutions, _ := context.GetSetting(sNumOfExecutions)
 	pathMapper, _, _ := a.getVariableMapper(context)
@@ -151,13 +163,6 @@ func (a *ExecActivity) Eval(context activity.Context) (done bool, err error) {
 	log.Debug("[ExecActivity.Eval] newEnv : ", newEnv)
 
 	log.Debug("(ExecActivity.Eval) iAsynchronous : ", iAsynchronous)
-	eventListener, _ := a.getExecEventBroker(context)
-	execContext := map[string]interface{}{
-		"Variable":          variable,
-		"SystemEnvironment": dynSysEnvs,
-		"Successful":        true,
-		"ErrorMsg":          "",
-	}
 	data := make(map[string]interface{})
 	if iAsynchronous {
 		log.Debug("(ExecActivity.Eval) execCommand asynchronously!")
