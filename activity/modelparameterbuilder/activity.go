@@ -412,6 +412,14 @@ func (a *ModelParameterBuilderActivity) getProperties(ctx activity.Context) ([]m
 					gProperties = append(gProperties, gProperty.(map[string]interface{}))
 				}
 			}
+			gProperties = append(gProperties, map[string]interface{}{
+				"Name":  "Working_Folder",
+				"Value": "/app/artifacts",
+			})
+			gProperties = append(gProperties, map[string]interface{}{
+				"Name":  "PythonModel_plugin",
+				"Value": "artifacts.inference",
+			})
 			a.gProperties[myId] = gProperties
 		}
 	}
