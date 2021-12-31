@@ -130,6 +130,15 @@ func (a *ModelParameterBuilderActivity) Eval(context activity.Context) (done boo
 		appProperties = make([]interface{}, 0)
 	}
 
+	appProperties = append(appProperties, map[string]interface{}{
+		"Name":  "Working_Folder",
+		"Value": "/app/artifacts",
+	})
+	appProperties = append(appProperties, map[string]interface{}{
+		"Name":  "PythonModel_plugin",
+		"Value": "artifacts.inference",
+	})
+
 	if nil != flogoAppDescriptor[iExtra] {
 		extraArray = flogoAppDescriptor[iExtra].([]interface{})
 		for _, property := range extraArray {
@@ -412,14 +421,6 @@ func (a *ModelParameterBuilderActivity) getProperties(ctx activity.Context) ([]m
 					gProperties = append(gProperties, gProperty.(map[string]interface{}))
 				}
 			}
-			gProperties = append(gProperties, map[string]interface{}{
-				"Name":  "Working_Folder",
-				"Value": "/app/artifacts",
-			})
-			gProperties = append(gProperties, map[string]interface{}{
-				"Name":  "PythonModel_plugin",
-				"Value": "artifacts.inference",
-			})
 			a.gProperties[myId] = gProperties
 		}
 	}
