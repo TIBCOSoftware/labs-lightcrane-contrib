@@ -85,9 +85,25 @@
             }
         },
         {
+            "name": "modelartifactmap",
+            "description": "For extracting model folder mapping",
+            "example": "f1.modelartifactmap([{'Type':'folder', 'Name':'/app/model', 'Value':'/usr/local/modelfolder'}]) => [{ 'Name': 'services.$Name$.volumes[0]', 'Value': '/app/model:/usr/local/modelfolder' }]",
+            "args": [
+                {
+                    "name": "artifacts",
+                    "type": "array",
+                    "valueType": "object"
+                }
+            ],
+            "return": {
+                "type": "array",
+                "valueType": "object"
+            }
+        },
+        {
             "name": "getproperty",
             "description": "Returns a property from properties",
-            "example": "f1.combineproperties([{'Name':'name1', 'Value':'value1'}], 'name1') => value1",
+            "example": "f1.getproperty([{'Name':'name1', 'Value':'value1'}], 'name1') => value1",
             "args": [
                 {
                     "name": "prop",
