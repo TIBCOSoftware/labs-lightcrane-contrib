@@ -166,7 +166,7 @@ func (a *ModelParameterBuilderActivity) Eval(context activity.Context) (done boo
 	for _, property := range appProperties {
 		name := property.(map[string]interface{})["Name"].(string)
 		gPropertyNameDef[name] = name
-		property.(map[string]interface{})["Name"] = strings.ReplaceAll(name, ".", "_")
+		property.(map[string]interface{})["Name"] = name //strings.ReplaceAll(name, ".", "_")
 	}
 
 	pathMapper, _, _ := a.getVariableMapper(context)
