@@ -9,3 +9,9 @@ For more information please visit [Project Air](https://tibcosoftware.github.io/
 ## Introduction
 
 These components are different [Project Flogo](https://www.flogo.io) extensions that form the contributions for the Lightcrane services.
+
+## Contributing
+
+For information regarding participation in the project, please see our
+[contributing](https://github.com/TIBCOSoftware/labs-air/CONTRIBUTING.md)
+document.
