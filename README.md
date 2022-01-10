@@ -13,5 +13,5 @@ These components are different [Project Flogo](https://www.flogo.io) extensions 
 ## Contributing
 
 For information regarding participation in the project, please see our
-[contributing](https://github.com/TIBCOSoftware/labs-air/CONTRIBUTING.md)
+[contributing](https://github.com/TIBCOSoftware/labs-air/blob/master/CONTRIBUTING.md)
 document.
