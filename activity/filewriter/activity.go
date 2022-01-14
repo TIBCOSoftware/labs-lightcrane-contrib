@@ -79,6 +79,7 @@ func (a *FileWriterActivity) Eval(context activity.Context) (done bool, err erro
 		outputFile = pathMapper.Replace("", pathVariable.(map[string]interface{}))
 	}
 
+	a.prepareFolder(outputFile)
 	if strings.HasSuffix(strings.ToLower(outputFile), ".zip.base64") || strings.HasSuffix(strings.ToLower(outputFile), ".zip") {
 		a.handelZipFile(outputFile, data)
 	} else {
@@ -129,6 +130,28 @@ func (a *FileWriterActivity) getPathMapper(ctx activity.Context) (*kwr.KeywordMa
 		}
 	}
 	return mapper, variables, nil
+}
+
+func (a *FileWriterActivity) prepareFolder(outputFile string) error {
+	outputFolder := filepath.Dir(outputFile)
+
+	log.Debug("Output file : ", outputFile)
+	log.Debug("Output folder : ", outputFolder)
+
+	// Check if folder exists
+	_, err := os.Stat(outputFolder)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err := os.MkdirAll(outputFolder, os.ModePerm)
+			if nil != err {
+				log.Error("Unable to create folder : ", err)
+				return err
+			}
+		}
+	}
+
+	log.Debug("Initializing FileWriter Service end ...")
+	return nil
 }
 
 func (a *FileWriterActivity) handelFile(outputFile string, dataEnvelop interface{}, inputType interface{}) error {
