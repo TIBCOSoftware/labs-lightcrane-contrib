@@ -4,24 +4,6 @@
  * in the license file that is distributed with this file.
  */
 
-/*
-	{
-		"imports": [],
-		"name": "ProjectAirApplication",
-		"description": "",
-		"version": "1.0.0",
-		"type": "flogo:app",
-		"appModel": "1.1.1",
-		"feVersion": "2.9.0",
-		"triggers": [],
-		"resources": [],
-		"properties": [],
-		"connections": {},
-		"contrib": "",
-		"fe_metadata": ""
-	}
-*/
-
 package modelparameterbuilder
 
 import (
@@ -33,40 +15,34 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
 	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
-
-	model "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/airmodel"
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
-var log = logger.GetLogger("tibco-model-ops-modelparameterbuilder")
+var log = logger.GetLogger("tibco-labs-modelparameterbuilder")
 
 var initialized bool = false
 
 const (
-	sTemplateFolder             = "TemplateFolder"
-	sLeftToken                  = "leftToken"
-	sRightToken                 = "rightToken"
-	sVariablesDef               = "variablesDef"
-	sProperties                 = "Properties"
-	iApplicationName            = "ApplicationName"
-	iApplicationProperties      = "ApplicationProperties"
-	iFlogoAppDescriptor         = "FlogoAppDescriptor"
-	iExtra                      = "extra"
-	iPorts                      = "ports"
-	iProperties                 = "properties"
-	iPropertyPrefix             = "PropertyPrefix"
-	iServiceType                = "ServiceType"
-	iVariable                   = "Variables"
-	oFlogoApplicationDescriptor = "FlogoDescriptor"
-	oF1Properties               = "F1Properties"
-	oDescriptor                 = "Descriptor"
-	oPropertyNameDef            = "PropertyNameDef"
+	sTemplateFolder     = "TemplateFolder"
+	sLeftToken          = "leftToken"
+	sRightToken         = "rightToken"
+	sVariablesDef       = "variablesDef"
+	sProperties         = "Properties"
+	iFlogoAppDescriptor = "FlogoAppDescriptor"
+	iExtra              = "extra"
+	iPorts              = "ports"
+	iProperties         = "properties"
+	iPropertyPrefix     = "PropertyPrefix"
+	iServiceType        = "ServiceType"
+	iVariable           = "Variables"
+	oF1Properties       = "F1Properties"
+	oDescriptor         = "Descriptor"
+	oPropertyNameDef    = "PropertyNameDef"
 )
 
 type ModelParameterBuilderActivity struct {
 	metadata    *activity.Metadata
 	mux         sync.Mutex
-	templates   map[string]*model.FlogoTemplateLibrary
 	pathMappers map[string]*kwr.KeywordMapper
 	variables   map[string]map[string]string
 	gProperties map[string][]map[string]interface{}
@@ -75,7 +51,6 @@ type ModelParameterBuilderActivity struct {
 func NewActivity(metadata *activity.Metadata) activity.Activity {
 	aModelParameterBuilderActivity := &ModelParameterBuilderActivity{
 		metadata:    metadata,
-		templates:   make(map[string]*model.FlogoTemplateLibrary),
 		pathMappers: make(map[string]*kwr.KeywordMapper),
 		variables:   make(map[string]map[string]string),
 		gProperties: make(map[string][]map[string]interface{}),
@@ -130,14 +105,14 @@ func (a *ModelParameterBuilderActivity) Eval(context activity.Context) (done boo
 		appProperties = make([]interface{}, 0)
 	}
 
-	appProperties = append(appProperties, map[string]interface{}{
-		"Name":  "Working_Folder",
-		"Value": "/app/artifacts",
-	})
-	appProperties = append(appProperties, map[string]interface{}{
-		"Name":  "PythonModel_plugin",
-		"Value": "artifacts.inference",
-	})
+	a.populateDefaultProperty(appProperties, "Working_Folder", "/app/artifacts")
+	a.populateDefaultProperty(appProperties, "PythonModel_plugin", "artifacts.inference")
+	a.populateDefaultProperty(appProperties, "System_ID", "$ID$")
+	a.populateDefaultProperty(appProperties, "System_ServiceLocator", "$ServiceLocator$")
+	a.populateDefaultProperty(appProperties, "System_EndpointComponent", "$ID$")
+	a.populateDefaultProperty(appProperties, "System_Port", "10100")
+	a.populateDefaultProperty(appProperties, "System_Standalone", "True")
+	a.populateDefaultProperty(appProperties, "System_EchoOn", "True")
 
 	if nil != flogoAppDescriptor[iExtra] {
 		extraArray = flogoAppDescriptor[iExtra].([]interface{})
@@ -154,6 +129,8 @@ func (a *ModelParameterBuilderActivity) Eval(context activity.Context) (done boo
 	} else {
 		extraArray = make([]interface{}, 0)
 	}
+
+	ports = a.populateDefaultPort(ports, appProperties)
 
 	/*********************************
 	    Construct Dynamic Parameter
@@ -208,6 +185,55 @@ func (a *ModelParameterBuilderActivity) Eval(context activity.Context) (done boo
 	return true, nil
 }
 
+func (a *ModelParameterBuilderActivity) populateDefaultProperty(properties []interface{}, name string, value string) []interface{} {
+	for _, property := range properties {
+		propertyName := property.(map[string]interface{})["Name"].(string)
+		if propertyName == name {
+			return properties
+		}
+	}
+	return append(properties, map[string]interface{}{
+		"Name":  name,
+		"Value": value,
+	})
+}
+
+func (a *ModelParameterBuilderActivity) populateDefaultPort(ports []interface{}, properties []interface{}) []interface{} {
+	if nil == ports {
+		ports = make([]interface{}, 0)
+	}
+	port := ""
+	extPort := ""
+	endpointPort := ""
+	for _, property := range properties {
+		propertyName := property.(map[string]interface{})["Name"].(string)
+		if "System_Port" == propertyName {
+			port = property.(map[string]interface{})["Value"].(string)
+		} else if "System_Port_Ext" == propertyName {
+			extPort = property.(map[string]interface{})["Value"].(string)
+		} else if "System_ExternalEndpointPort" == propertyName {
+			endpointPort = property.(map[string]interface{})["Value"].(string)
+		}
+	}
+
+	if "" == extPort {
+		extPort = endpointPort
+	}
+
+	if "" == port || "" == extPort {
+		return ports
+	}
+
+	defaultPortPair := fmt.Sprintf("%s:%s", extPort, port)
+	for _, aPortPair := range ports {
+		if strings.HasSuffix(aPortPair.(string), fmt.Sprintf(":%s", port)) {
+			return ports
+		}
+	}
+
+	return append(ports, defaultPortPair)
+}
+
 func (a *ModelParameterBuilderActivity) createDockerF1Properties(
 	pathMapper *kwr.KeywordMapper,
 	defVariable map[string]interface{},
@@ -254,6 +280,9 @@ func (a *ModelParameterBuilderActivity) createDockerF1Properties(
 		})
 	}
 	index := 0
+
+	//	System_ExternalEndpointPort
+
 	for _, port := range ports {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
 			"Name":  pathMapper.Replace(fmt.Sprintf("%s.ports[%d]", propertyPrefix, index), defVariable),
