@@ -93,6 +93,10 @@
  		{
 			"name": "PropertyNameDef",
 			"type": "object"
+		},
+ 		{
+			"name": "Runner",
+			"type": "string"
 		}
 	]
 }

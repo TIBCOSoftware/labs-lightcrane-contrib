@@ -10,7 +10,7 @@
 		"visible": true,
 		"smallIcon": "simpletable.png"
 	},
-	"ref": "github.com/P-f1/LC/connector/simpletable",
+	"ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/connector/simpletable",
 	"keyfield": "name",
 	"settings": [
 		{

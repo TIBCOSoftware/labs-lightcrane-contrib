@@ -97,6 +97,8 @@ func (this DataSource) BuildActivities(subflowID string) []interface{} {
 				_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
 				activities = append(activities, this.subflowActivity)
 			}
+			_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
+			activities = append(activities, this.subflowActivity)
 		}
 		activities = append(activities, activity)
 	}
@@ -401,6 +403,10 @@ func (this Logic) Clone(sn int, name string) PipelineComponent {
 		defaultActivities: util.DeepCopy(this.defaultActivities).([]interface{}),
 		subflowActivities: util.DeepCopy(this.subflowActivities).(map[string]interface{}),
 	}
+}
+
+func (this Logic) GetRunner() interface{} {
+	return this.data["runner"]
 }
 
 func (this Logic) Get(key string) interface{} {
