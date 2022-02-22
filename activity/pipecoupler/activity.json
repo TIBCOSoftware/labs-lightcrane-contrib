@@ -1,0 +1,46 @@
+{
+    "name": "pipecoupler",
+    "version": "1.0.0",
+    "title": "ML pipeline coupler",
+    "author": "TIBCO Software Inc.",
+    "type": "flogo:activity",
+    "display": {
+       "category": "ModelOps",
+       "visible": true,
+       "smallIcon": "pipecoupler.png",
+       "description": "This activity couple ML pipelines"
+    },
+    "ref": "github.com/TIBCOSoftware/labs-lightcrane-contrib/activity/pipecoupler",
+	"settings": [
+		{
+			"name": "DownstreamHost",
+			"type": "string",
+			"display": {
+				"name": "Downstream Host",
+				"description": "Downstream host",
+ 				"appPropertySupport": true
+			}
+		},
+		{
+			"name": "Port",
+			"type": "integer",
+			"display": {
+				"name": "Port",
+				"description": "Port for downstream host",
+ 				"appPropertySupport": true
+			}
+		}
+	],
+    "inputs": [
+		{
+			"name": "Data",
+			"type": "complex_object"
+		}
+    ],
+	"outputs": [
+		{
+			"name": "Reply",
+			"type": "complex_object"
+		}
+	]
+}
