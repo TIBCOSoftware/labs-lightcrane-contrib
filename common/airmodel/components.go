@@ -4,7 +4,7 @@
  * in the license file that is distributed with this file.
  */
 
-package model
+package airmodel
 
 import (
 	"encoding/json"

@@ -1,4 +1,4 @@
-package model
+package airmodel
 
 import (
 	"io/ioutil"
