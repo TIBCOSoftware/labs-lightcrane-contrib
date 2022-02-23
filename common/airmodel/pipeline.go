@@ -4,15 +4,15 @@
  * in the license file that is distributed with this file.
  */
 
-package model
+package airmodel
 
 import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/objectbuilder"
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
-	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 var log = logger.GetLogger("tibco-f1-pipeline-model")

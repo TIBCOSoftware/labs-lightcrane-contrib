@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/SteveNY-Tibco/labs-lightcrane-contrib/common/util"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/project-flogo/core/data"
 	"github.com/project-flogo/core/data/expression/function"
 )
