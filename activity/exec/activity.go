@@ -320,6 +320,7 @@ func (a *ExecActivity) getExecEventBroker(context activity.Context) (*execeventb
 	exeEventBroker := execeventbroker.GetFactory().GetEXEEventBroker(a.activityToConnector[myId])
 	if nil == exeEventBroker {
 		log.Debug("Look up ececution event broker start ...")
+		defer log.Debug("Look up execution event broker end ...")
 		connection, exist := context.GetSetting(cConnection)
 		if !exist {
 			log.Warn("Execution event broker not configured! ")

@@ -60,18 +60,31 @@ func (a *FileReaderActivity) Eval(context activity.Context) (done bool, err erro
 		filePattern = fmt.Sprintf("%s/%s", baseFolder, filePattern)
 	}
 
-	matches, err := filepath.Glob(filePattern)
-
-	log.Debug("(FileReaderActivity.Eval) File pattern : ", filePattern)
-
 	results := make([]map[string]interface{}, 0)
-	for _, filename := range matches {
-		content, err := readFile(filename)
+	content, err := readFile(filePattern)
+	if nil != err {
+		log.Error("(FileReaderActivity.Eval) err : ", err)
+		matches, err := filepath.Glob(filePattern)
 		if nil != err {
-			continue
+			log.Error("(FileReaderActivity.Eval) err : ", err)
+			return false, err
 		}
-		results = append(results, map[string]interface{}{"Filename": filename, "Content": content})
+
+		log.Info("(FileReaderActivity.Eval) File pattern : ", filePattern, ", matches : ", matches)
+
+		for _, filename := range matches {
+			content, err := readFile(filename)
+			if nil != err {
+				log.Error("(FileReaderActivity.Eval) err : ", err)
+				continue
+			}
+			results = append(results, map[string]interface{}{"Filename": filename, "Content": content})
+		}
+	} else {
+		results = append(results, map[string]interface{}{"Filename": filePattern, "Content": content})
 	}
+
+	log.Debug("(FileReaderActivity.Eval) results : ", results)
 	context.SetOutput(oResults, results)
 
 	return true, nil
@@ -101,7 +114,9 @@ func (a *FileReaderActivity) getBaseFolder(context activity.Context) (string, er
 }
 
 func readFile(filename string) (string, error) {
+	log.Debug("(FileReaderActivity.readFile) filename = ", filename)
 	fileContent, err := ioutil.ReadFile(filename)
+	log.Debug("(FileReaderActivity.readFile) fileContent = ", fileContent)
 	if err != nil {
 		log.Error("File reading error", err)
 		return "", err
