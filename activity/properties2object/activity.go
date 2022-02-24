@@ -127,9 +127,9 @@ func (a *Properties2ObjectActivity) buildObject(
 			log.Debug("(Properties2ObjectActivity.Eval) propertyValue : ", propertyValue)
 			current := propertiesObj
 			for index, key := range keyElements {
-				//log.Debug("[Properties2ObjectActivity:Eval] key = ", key)
+				log.Debug("[Properties2ObjectActivity:Eval] key = ", key)
 				if strings.HasSuffix(key, "]") {
-					//log.Debug("[Properties2ObjectActivity:Eval] an array ... ")
+					log.Debug("[Properties2ObjectActivity:Eval] an array ... ")
 					pos := strings.Index(key, "[")
 					slot, _ := strconv.Atoi(key[pos+1 : len(key)-1])
 					key = key[0:pos]
@@ -146,7 +146,7 @@ func (a *Properties2ObjectActivity) buildObject(
 						current = current[key].([]interface{})[slot].(map[string]interface{})
 					}
 				} else {
-					//log.Debug("[Properties2ObjectActivity:Eval] an object or a value ... ")
+					log.Debug("[Properties2ObjectActivity:Eval] an object or a value ... ")
 					if nil == current[key] {
 						current[key] = make(map[string]interface{})
 					}

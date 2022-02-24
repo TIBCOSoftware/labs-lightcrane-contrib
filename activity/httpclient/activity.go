@@ -156,6 +156,7 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 	context.SetOutput(oSuccess, success)
 	context.SetOutput(oData, data)
 	context.SetOutput(oErrorCode, errorCode)
+	log.Debug("[HTTPClientActivity:Eval] success : ", success)
 
 	return true, nil
 }

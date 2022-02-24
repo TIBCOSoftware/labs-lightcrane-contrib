@@ -59,7 +59,7 @@ func (a *FileWriterActivity) Metadata() *activity.Metadata {
 }
 
 func (a *FileWriterActivity) Eval(context activity.Context) (done bool, err error) {
-	log.Debug("(FileWriterActivity.Eval) Graph to file entering ......... ")
+	log.Debug("(FileWriterActivity.Eval) write object to file entering ......... ")
 	defer log.Debug("(FileWriterActivity.Eval) write object to file exit ......... ")
 
 	skipCondition := context.GetInput(iSkipCondition).(bool)
@@ -79,6 +79,7 @@ func (a *FileWriterActivity) Eval(context activity.Context) (done bool, err erro
 		outputFile = pathMapper.Replace("", pathVariable.(map[string]interface{}))
 	}
 
+	log.Debug("(FileWriterActivity.Eval) outputFile : ", outputFile)
 	a.prepareFolder(outputFile)
 	if strings.HasSuffix(strings.ToLower(outputFile), ".zip.base64") || strings.HasSuffix(strings.ToLower(outputFile), ".zip") {
 		a.handelZipFile(outputFile, data)
@@ -155,6 +156,8 @@ func (a *FileWriterActivity) prepareFolder(outputFile string) error {
 }
 
 func (a *FileWriterActivity) handelFile(outputFile string, dataEnvelop interface{}, inputType interface{}) error {
+	log.Debug("(FileWriterActivity.handelFile) File name : ", outputFile)
+
 	var dataString string
 	if "String" == inputType {
 		dataString = dataEnvelop.(map[string]interface{})[iInput].(string)
@@ -187,6 +190,9 @@ func (a *FileWriterActivity) handelFile(outputFile string, dataEnvelop interface
 }
 
 func (a *FileWriterActivity) handelZipFile(fullFilename string, dataEnvelop interface{}) error {
+	log.Debug("(FileWriterActivity.handelZipFile) File name : ", fullFilename)
+	log.Debug("(FileWriterActivity.handelZipFile) dataEnvelop : ", dataEnvelop)
+
 	b64data := dataEnvelop.(map[string]interface{})[iInput].(string)
 	data, err := b64.StdEncoding.DecodeString(string(b64data))
 
