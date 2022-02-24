@@ -97,8 +97,6 @@ func (this DataSource) BuildActivities(subflowID string) []interface{} {
 				_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
 				activities = append(activities, this.subflowActivity)
 			}
-			_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
-			activities = append(activities, this.subflowActivity)
 		}
 		activities = append(activities, activity)
 	}
