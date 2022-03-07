@@ -100,12 +100,15 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 	var data string
 	statusCode := 600
 	if "" != url {
-		method, ok := context.GetInput(sMethod).(string)
+		var method interface{}
+		runtimeMethod, ok := context.GetInput(sMethod).(string)
 		if !ok {
 			method, ok = context.GetSetting(sMethod)
 			if !ok {
 				return false, errors.New("Query method not defined!")
 			}
+		} else {
+			method = runtimeMethod
 		}
 		log.Debug("[HTTPClientActivity:Eval] Query method : ", method)
 
