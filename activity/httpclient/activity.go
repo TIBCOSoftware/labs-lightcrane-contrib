@@ -33,6 +33,7 @@ const (
 	sVariablesDef  = "variablesDef"
 	sHttpHeaders   = "httpHeaders"
 	iURL           = "URL"
+	iMethod        = "Method"
 	iBody          = "Body"
 	iVariable      = "Variables"
 	iSkipCondition = "SkipCondition"
@@ -101,12 +102,14 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 	statusCode := 600
 	if "" != url {
 		var method interface{}
-		runtimeMethod, ok := context.GetInput(sMethod).(string)
+		runtimeMethod, ok := context.GetInput(iMethod).(string)
+		log.Debug("[HTTPClientActivity:Eval] Runtime method : ", runtimeMethod)
 		if !ok {
 			method, ok = context.GetSetting(sMethod)
 			if !ok {
 				return false, errors.New("Query method not defined!")
 			}
+			log.Debug("[HTTPClientActivity:Eval] Default method : ", method)
 		} else {
 			method = runtimeMethod
 		}
