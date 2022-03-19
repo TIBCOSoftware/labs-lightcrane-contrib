@@ -366,7 +366,7 @@
         },
         {
             "name": "airfirsttrue",
-            "description": "Returns the first objects set match target names",
+            "description": "Returns the index of first objects set which matches target names from readings. Nothing matches returns max index plus one.",
             "args": [
                 {
                     "name": "reading",
