@@ -50,5 +50,5 @@ func (fnAirFirstTrue) Eval(params ...interface{}) (interface{}, error) {
 		}
 	}
 
-	return -1, nil
+	return index + 1, nil
 }
