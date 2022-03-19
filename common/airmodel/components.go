@@ -257,7 +257,13 @@ func (this Notifier) GetConnections() interface{} {
 
 /* Logic Class */
 
-func NewLogic(category string, filename string, subflowActivity map[string]interface{}) (Logic, error) {
+func NewLogic(
+	category string,
+	filename string,
+	subflowActivity map[string]interface{},
+	metadata map[string]interface{},
+	errorHandler map[string]interface{}) (Logic, error) {
+
 	//log.Debug(">>>>>>>>>> Logics >>>>>>>>>>>>> category = ", category, ", filename = ", filename)
 	data, err := FromFile(filename)
 	iDefaultActivities := objectbuilder.LocateObject(data, "root.resources[0].data.tasks[]")
@@ -296,6 +302,8 @@ func NewLogic(category string, filename string, subflowActivity map[string]inter
 		rawProperties:     data["properties"].([]interface{}),
 		defaultActivities: defaultActivities,
 		subflowActivities: subflowActivities,
+		metadata:          metadata,
+		errorHandler:      errorHandler,
 	}, err
 }
 
@@ -307,6 +315,8 @@ type Logic struct {
 	rawProperties     []interface{}
 	defaultActivities []interface{}
 	subflowActivities map[string]interface{}
+	metadata          map[string]interface{}
+	errorHandler      map[string]interface{}
 	loggersetup       string
 }
 
@@ -376,6 +386,8 @@ func (this Logic) Build(subflowID string, last bool) {
 		}
 		_ = objectbuilder.SetObject(this.data, "root.resources[0].data.links[]", links)
 	}
+	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.metadata", this.metadata)
+	//_ = objectbuilder.SetObject(this.data, "root.resources[0].data.errorHandler", this.errorHandler)
 	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.name", fmt.Sprintf("%s_%d", this.category, this.sn))
 	_ = objectbuilder.SetObject(this.data, "root.resources[0].id", fmt.Sprintf("flow:%s_%d", this.category, this.sn))
 	if "Dummy" != this.name {
@@ -400,6 +412,8 @@ func (this Logic) Clone(sn int, name string) PipelineComponent {
 		rawProperties:     util.DeepCopy(this.rawProperties).([]interface{}),
 		defaultActivities: util.DeepCopy(this.defaultActivities).([]interface{}),
 		subflowActivities: util.DeepCopy(this.subflowActivities).(map[string]interface{}),
+		metadata:          util.DeepCopy(this.metadata).(map[string]interface{}),
+		errorHandler:      util.DeepCopy(this.errorHandler).(map[string]interface{}),
 	}
 }
 

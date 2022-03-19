@@ -105,6 +105,8 @@ func NewFlogoTemplateLibrary(folder string) (*FlogoTemplateLibrary, error) {
 				log.Error("Fail to read subflow data from %s : %v", subflowFile, err)
 			}
 			subflowEntry := objectbuilder.LocateObject(subflowData, "root.resources[0].data.tasks[0]").(map[string]interface{})
+			subflowMetadata := objectbuilder.LocateObject(FromFile(fmt.Sprintf("%s/Metadata.json", folder)), "root.resources[0].data.metadata").(map[string]interface{})
+			subflowErrorHandler := objectbuilder.LocateObject(FromFile(fmt.Sprintf("%s/ErrorHandler.json", folder)), "root.resources[0].data.errorHandler").(map[string]interface{})
 			for _, template := range templates {
 				if template.IsDir() {
 					log.Debug("---- template -> " + template.Name())
@@ -115,7 +117,7 @@ func NewFlogoTemplateLibrary(folder string) (*FlogoTemplateLibrary, error) {
 					} else if "Notifier" == category.Name() {
 						component, err = NewNotifier(category.Name(), filename)
 					} else {
-						component, err = NewLogic(category.Name(), filename, subflowEntry)
+						component, err = NewLogic(category.Name(), filename, subflowEntry, subflowMetadata, subflowErrorHandler)
 					}
 					if nil != err {
 						return nil, err
