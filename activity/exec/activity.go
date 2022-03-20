@@ -124,15 +124,18 @@ func (a *ExecActivity) Eval(context activity.Context) (done bool, err error) {
 	skipCondition := context.GetInput(iSkipCondition).(bool)
 	if skipCondition {
 		log.Debug("(ExecActivity.Eval) Skip taks : ", skipCondition)
-		success := true
-		message := "Command Skiped!"
-		context.SetOutput(oSuccess, success)
-		context.SetOutput(oMessage, message)
-		context.SetOutput(oErrorCode, 100)
-		context.SetOutput(oResult, make(map[string]interface{}))
 
-		log.Debug("[ExecActivity.skipCondition] send event - execContext : ", execContext)
-		eventListener.SendEvent(execContext)
+		if nil != eventListener {
+			success := true
+			message := "Command Skiped!"
+			context.SetOutput(oSuccess, success)
+			context.SetOutput(oMessage, message)
+			context.SetOutput(oErrorCode, 100)
+			context.SetOutput(oResult, make(map[string]interface{}))
+			log.Debug("[ExecActivity.execCommand] send event - execContext : ", context)
+			eventListener.SendEvent(execContext)
+		}
+
 		return true, nil
 	}
 
