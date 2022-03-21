@@ -53,11 +53,16 @@ type AirYmal2FlogoProperties struct {
 func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementId, element interface{}, dataType interface{}) interface{} {
 	log.Info("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
 	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
+		log.Info("(fnAirYmal2FlogoProperties.HandleElements) Illegal parameter : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
 		name := namespace.GetId()[0]
+		if "string" == dataType {
+			element = fmt.Sprintf("'%2'", element)
+		}
 		a.properties = append(a.properties, map[string]interface{}{
 			"Name":  name[strings.Index(name, ".")+1:],
 			"Value": element,
 		})
+		log.Info("(fnAirYmal2FlogoProperties.HandleElements) Illegal parameter : a.properties = ", a.properties)
 	}
 	return nil
 }
