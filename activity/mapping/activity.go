@@ -8,9 +8,9 @@ package mapping
 import (
 	"sync"
 
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 // activityLogger is the default logger for the Filter Activity
@@ -55,25 +55,27 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 	mappedTuple := ctx.GetInput(input).(map[string]interface{})
 	log.Debug("[Mapping.Evale] mapped data = ", mappedTuple)
 
-	isArray, exists := ctx.GetSetting(is_array)
-	if exists && isArray.(bool) {
-		mappedTuples := a.getMappedTuples(ctx)
-		arraySize := mappedTuple[array_size].(int)
-		delete(mappedTuple, array_size)
-		skipCondition := mappedTuple[skip_condition].(bool)
-		delete(mappedTuple, skip_condition)
-		log.Debug("[Mapping.Evale] skipCondition = ", skipCondition)
-		if !skipCondition {
-			mappedTuples.SetData(mappedTuple)
+	skipCondition := mappedTuple[skip_condition].(bool)
+	if !skipCondition {
+		isArray, exists := ctx.GetSetting(is_array)
+		if exists && isArray.(bool) {
+			mappedTuples := a.getMappedTuples(ctx)
+			arraySize := mappedTuple[array_size].(int)
+			delete(mappedTuple, array_size)
+			delete(mappedTuple, skip_condition)
+			log.Debug("[Mapping.Evale] skipCondition = ", skipCondition)
+			if !skipCondition {
+				mappedTuples.SetData(mappedTuple)
+			} else {
+				mappedTuples.SkipData()
+			}
+			if arraySize == mappedTuples.ProcessedCount() {
+				ctx.SetOutput(output, mappedTuples.GetList())
+				mappedTuples.clear()
+			}
 		} else {
-			mappedTuples.SkipData()
+			ctx.SetOutput(output, mappedTuple)
 		}
-		if arraySize == mappedTuples.ProcessedCount() {
-			ctx.SetOutput(output, mappedTuples.GetList())
-			mappedTuples.clear()
-		}
-	} else {
-		ctx.SetOutput(output, mappedTuple)
 	}
 	return true, nil
 }
