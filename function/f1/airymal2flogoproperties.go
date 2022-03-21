@@ -56,7 +56,7 @@ func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementI
 		name := namespace.GetId()[0]
 		log.Info("(fnAirYmal2FlogoProperties.HandleElements) a.properties : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
 		if "string" == dataType {
-			element = fmt.Sprintf("'%2'", element)
+			element = fmt.Sprintf("'%s'", element)
 		}
 		a.properties[name[strings.Index(name, ".")+1:]] = element
 		log.Info("(fnAirYmal2FlogoProperties.HandleElements) a.properties = ", a.properties)
@@ -73,6 +73,6 @@ func (a AirYmal2FlogoProperties) GetData() []map[string]interface{} {
 			"Value": value,
 		})
 	}
-	log.Info("(fnAirYmal2FlogoProperties.GetData) a.properties = ", a.properties)
+	log.Info("(fnAirYmal2FlogoProperties.GetData) propertiesArray = ", propertiesArray)
 	return propertiesArray
 }
