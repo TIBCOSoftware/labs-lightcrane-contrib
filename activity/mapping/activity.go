@@ -55,7 +55,10 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 	mappedTuple := ctx.GetInput(input).(map[string]interface{})
 	log.Debug("[Mapping.Evale] mapped data = ", mappedTuple)
 
-	skipCondition := mappedTuple[skip_condition].(bool)
+	skipCondition := false
+	if nil != mappedTuple[skip_condition] {
+		skipCondition = mappedTuple[skip_condition].(bool)
+	}
 	isArray, exists := ctx.GetSetting(is_array)
 	if exists && isArray.(bool) {
 		mappedTuples := a.getMappedTuples(ctx)
