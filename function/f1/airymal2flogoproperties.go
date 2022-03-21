@@ -39,10 +39,11 @@ func (f fnAirYmal2FlogoProperties) Eval(params ...interface{}) (interface{}, err
 		return nil, nil
 	}
 
-	walker := objectbuilder.NewGOLangObjectWalker(AirYmal2FlogoProperties{properties: make([]map[string]interface{}, 0)})
+	handler := AirYmal2FlogoProperties{properties: make([]map[string]interface{}, 0)}
+	walker := objectbuilder.NewGOLangObjectWalker(handler)
 	walker.Start(yamlDescriptor)
 
-	return walker.GetData(), nil
+	return handler.GetData(), nil
 }
 
 type AirYmal2FlogoProperties struct {
@@ -53,8 +54,10 @@ func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementI
 	log.Info("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
 	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
 		name := namespace.GetId()[0]
-		properties["Name"] = name[strings.Index(name, ".")+1:]
-		properties["Value"] = element
+		a.properties = append(a.properties, map[string]interface{}{
+			"Name":  name[strings.Index(name, ".")+1:],
+			"Value": element,
+		})
 	}
 	return nil
 }
