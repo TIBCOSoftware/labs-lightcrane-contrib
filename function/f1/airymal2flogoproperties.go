@@ -68,5 +68,6 @@ func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementI
 }
 
 func (a AirYmal2FlogoProperties) GetData() []map[string]interface{} {
+	log.Info("(fnAirYmal2FlogoProperties.GetData) Illegal parameter : a.properties = ", a.properties)
 	return a.properties
 }
