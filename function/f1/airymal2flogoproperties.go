@@ -2,6 +2,7 @@ package f1
 
 import (
 	"fmt"
+	"strings"
 
 	yaml "gopkg.in/yaml.v3"
 
@@ -34,29 +35,33 @@ func (f fnAirYmal2FlogoProperties) Eval(params ...interface{}) (interface{}, err
 	var yamlDescriptor map[string]interface{}
 	err := yaml.Unmarshal([]byte(ymalString), &yamlDescriptor)
 	if nil != err {
-		return true, err
+		log.Info("(fnAirYmal2FlogoProperties.Eval) Illegal parameter : Unable to parse yaml.")
+		return nil, nil
 	}
 
-	properties := make([]map[string]interface{}, 0)
-	walker := objectbuilder.NewGOLangObjectWalker(f)
+	handler := AirYmal2FlogoProperties{properties: make([]map[string]interface{}, 0)}
+	walker := objectbuilder.NewGOLangObjectWalker(handler)
 	walker.Start(yamlDescriptor)
-	//	for _, property := range flogoAppDescriptor["properties"].([]interface{}) {
-	//		propertyObj := property.(map[string]interface{})
-	//		properties = append(properties, map[string]interface{}{
-	//			"Name":  propertyObj["name"],
-	//			"Value": propertyObj["value"],
-	//			"Type":  propertyObj["type"],
-	//		})
-	//	}
 
-	return properties, nil
+	return handler.GetData(), nil
 }
 
-func (f fnAirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementId, element interface{}, dataType interface{}) interface{} {
-	log.Info("name space : ", namespace.GetId())
+type AirYmal2FlogoProperties struct {
+	properties []map[string]interface{}
+}
+
+func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementId, element interface{}, dataType interface{}) interface{} {
+	log.Info("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
+	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
+		name := namespace.GetId()[0]
+		a.properties = append(a.properties, map[string]interface{}{
+			"Name":  name[strings.Index(name, ".")+1:],
+			"Value": element,
+		})
+	}
 	return nil
 }
 
-func (f fnAirYmal2FlogoProperties) GetData() []map[string]interface{} {
-	return nil
+func (a AirYmal2FlogoProperties) GetData() []map[string]interface{} {
+	return a.properties
 }

@@ -208,7 +208,7 @@ func (this *ElementId) GetId() []string {
 			arrayElement = true
 		}
 	}
-	if nil != this.name {
+	if nil != this.name && !this.namespace[len(this.namespace)-1].array {
 		buffer.WriteString(".")
 		buffer.WriteString(this.name.(string))
 	}
