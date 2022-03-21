@@ -39,7 +39,7 @@ func (f fnAirYmal2FlogoProperties) Eval(params ...interface{}) (interface{}, err
 		return nil, nil
 	}
 
-	handler := AirYmal2FlogoProperties{properties: make([]map[string]interface{}, 0)}
+	handler := AirYmal2FlogoProperties{properties: make(map[string]interface{})}
 	walker := objectbuilder.NewGOLangObjectWalker(handler)
 	walker.Start(yamlDescriptor)
 
@@ -47,27 +47,32 @@ func (f fnAirYmal2FlogoProperties) Eval(params ...interface{}) (interface{}, err
 }
 
 type AirYmal2FlogoProperties struct {
-	properties []map[string]interface{}
+	properties map[string]interface{}
 }
 
 func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementId, element interface{}, dataType interface{}) interface{} {
 	log.Info("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
 	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
 		name := namespace.GetId()[0]
-		log.Info("(fnAirYmal2FlogoProperties.HandleElements) Illegal parameter : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
+		log.Info("(fnAirYmal2FlogoProperties.HandleElements) a.properties : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
 		if "string" == dataType {
 			element = fmt.Sprintf("'%2'", element)
 		}
-		a.properties = append(a.properties, map[string]interface{}{
-			"Name":  name[strings.Index(name, ".")+1:],
-			"Value": element,
-		})
-		log.Info("(fnAirYmal2FlogoProperties.HandleElements) Illegal parameter : a.properties = ", a.properties)
+		a.properties[name[strings.Index(name, ".")+1:]] = element
+		log.Info("(fnAirYmal2FlogoProperties.HandleElements) a.properties = ", a.properties)
 	}
 	return nil
 }
 
 func (a AirYmal2FlogoProperties) GetData() []map[string]interface{} {
-	log.Info("(fnAirYmal2FlogoProperties.GetData) Illegal parameter : a.properties = ", a.properties)
-	return a.properties
+	log.Info("(fnAirYmal2FlogoProperties.GetData) a.properties = ", a.properties)
+	propertiesArray := make([]map[string]interface{}, 0)
+	for name, value := range a.properties {
+		propertiesArray = append(propertiesArray, map[string]interface{}{
+			"Name":  name,
+			"Value": value,
+		})
+	}
+	log.Info("(fnAirYmal2FlogoProperties.GetData) a.properties = ", a.properties)
+	return propertiesArray
 }
