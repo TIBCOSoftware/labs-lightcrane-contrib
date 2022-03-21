@@ -76,8 +76,9 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 		} else {
 			ctx.SetOutput(output, mappedTuple)
 		}
+		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 func (a *Mapping) getMappedTuples(context activity.Context) *ProcessedList {
