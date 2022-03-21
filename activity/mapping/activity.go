@@ -56,29 +56,28 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 	log.Debug("[Mapping.Evale] mapped data = ", mappedTuple)
 
 	skipCondition := mappedTuple[skip_condition].(bool)
-	if !skipCondition {
-		isArray, exists := ctx.GetSetting(is_array)
-		if exists && isArray.(bool) {
-			mappedTuples := a.getMappedTuples(ctx)
-			arraySize := mappedTuple[array_size].(int)
+	isArray, exists := ctx.GetSetting(is_array)
+	if exists && isArray.(bool) {
+		mappedTuples := a.getMappedTuples(ctx)
+		log.Debug("[Mapping.Evale] skipCondition = ", skipCondition)
+		if !skipCondition {
 			delete(mappedTuple, array_size)
 			delete(mappedTuple, skip_condition)
-			log.Debug("[Mapping.Evale] skipCondition = ", skipCondition)
-			if !skipCondition {
-				mappedTuples.SetData(mappedTuple)
-			} else {
-				mappedTuples.SkipData()
-			}
-			if arraySize == mappedTuples.ProcessedCount() {
-				ctx.SetOutput(output, mappedTuples.GetList())
-				mappedTuples.clear()
-			}
+			mappedTuples.SetData(mappedTuple)
 		} else {
+			mappedTuples.SkipData()
+		}
+		arraySize := mappedTuple[array_size].(int)
+		if arraySize == mappedTuples.ProcessedCount() {
+			ctx.SetOutput(output, mappedTuples.GetList())
+			mappedTuples.clear()
+		}
+	} else {
+		if !skipCondition {
 			ctx.SetOutput(output, mappedTuple)
 		}
-		return true, nil
 	}
-	return false, nil
+	return true, nil
 }
 
 func (a *Mapping) getMappedTuples(context activity.Context) *ProcessedList {
