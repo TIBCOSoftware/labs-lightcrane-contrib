@@ -72,11 +72,13 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 		}
 		arraySize := mappedTuple[array_size].(int)
 		if arraySize == mappedTuples.ProcessedCount() {
+			log.Debug("[Mapping.Evale] mappedTuples.GetList() = ", mappedTuples.GetList())
 			ctx.SetOutput(output, mappedTuples.GetList())
 			mappedTuples.clear()
 		}
 	} else {
 		if !skipCondition {
+			log.Debug("[Mapping.Evale] mappedTuple = ", mappedTuple)
 			ctx.SetOutput(output, mappedTuple)
 		}
 	}
