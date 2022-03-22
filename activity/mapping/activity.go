@@ -67,12 +67,14 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 			delete(mappedTuple, array_size)
 			delete(mappedTuple, skip_condition)
 			mappedTuples.SetData(mappedTuple)
+			log.Debug("[Mapping.Evale] 1. mappedTuples.GetList() = ", mappedTuples.GetList())
 		} else {
 			mappedTuples.SkipData()
+			log.Debug("[Mapping.Evale] 2. mappedTuples.GetList() = ", mappedTuples.GetList())
 		}
 		arraySize := mappedTuple[array_size].(int)
 		if arraySize == mappedTuples.ProcessedCount() {
-			log.Debug("[Mapping.Evale] mappedTuples.GetList() = ", mappedTuples.GetList())
+			log.Debug("[Mapping.Evale] 3. mappedTuples.GetList() = ", mappedTuples.GetList())
 			ctx.SetOutput(output, mappedTuples.GetList())
 			mappedTuples.clear()
 		}
