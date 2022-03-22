@@ -42,8 +42,11 @@ func (f fnAirYmal2FlogoProperties) Eval(params ...interface{}) (interface{}, err
 	handler := AirYmal2FlogoProperties{properties: make(map[string]interface{})}
 	walker := objectbuilder.NewGOLangObjectWalker(handler)
 	walker.Start(yamlDescriptor)
-
-	return handler.GetData(), nil
+	propArray := make([]interface{}, 0)
+	for _, prop := range handler.GetData() {
+		propArray = append(propArray, prop)
+	}
+	return propArray, nil
 }
 
 type AirYmal2FlogoProperties struct {
