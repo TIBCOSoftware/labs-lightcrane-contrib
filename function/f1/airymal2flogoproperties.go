@@ -58,9 +58,6 @@ func (a AirYmal2FlogoProperties) HandleElements(namespace objectbuilder.ElementI
 	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
 		name := namespace.GetId()[0]
 		log.Info("(fnAirYmal2FlogoProperties.HandleElements) a.properties : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
-		if "string" == dataType {
-			element = fmt.Sprintf("'%s'", element)
-		}
 		a.properties[name[strings.Index(name, ".")+1:]] = element
 		log.Info("(fnAirYmal2FlogoProperties.HandleElements) a.properties = ", a.properties)
 	}
