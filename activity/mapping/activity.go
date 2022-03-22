@@ -6,6 +6,7 @@
 package mapping
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
@@ -61,6 +62,10 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 	}
 	isArray, exists := ctx.GetSetting(is_array)
 	if exists && isArray.(bool) {
+		if nil == mappedTuple[array_size] {
+			return true, fmt.Errorf("Illegel array size : null")
+		}
+		arraySize := mappedTuple[array_size].(int)
 		mappedTuples := a.getMappedTuples(ctx)
 		log.Debug("[Mapping.Evale] skipCondition = ", skipCondition)
 		if !skipCondition {
@@ -72,7 +77,6 @@ func (a *Mapping) Eval(ctx activity.Context) (done bool, err error) {
 			mappedTuples.SkipData()
 			log.Debug("[Mapping.Evale] 2. mappedTuples.GetList() = ", mappedTuples.GetList())
 		}
-		arraySize := mappedTuple[array_size].(int)
 		if arraySize == mappedTuples.ProcessedCount() {
 			log.Debug("[Mapping.Evale] 3. mappedTuples.GetList() = ", mappedTuples.GetList())
 			ctx.SetOutput(output, mappedTuples.GetList())
