@@ -9,11 +9,13 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
-
-	"log"
 	"os"
 	"sync"
+
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
+
+var log = logger.GetLogger("tibco-f1-table")
 
 type TableManager struct {
 	tables map[string]*Table
@@ -73,7 +75,7 @@ func (this *Table) AddIndex(keyName []string) bool {
 	key, _ := ConstructKey(keyName, nil)
 	this.indices = append(this.indices, keyName)
 	this.theIndexedKey[key] = make(map[CompositKey][]CompositKey)
-	log.Println("table after add index: indices = ", this.indices, ", table = ", this.theMap)
+	log.Debug("(AddIndex) table after add index: indices = ", this.indices, ", table = ", this.theMap)
 	return true
 }
 
@@ -96,10 +98,10 @@ func (this *Table) GetAll() ([]*Record, bool) {
 }
 
 func (this *Table) Get(searchKey []string, data map[string]interface{}) ([]*Record, bool) {
-	log.Println("searchKey : ", searchKey)
-	log.Println("data : ", data)
-	log.Println("pKey : ", this.pKey)
-	log.Println("theMap : ", this.theMap)
+	log.Debug("(Get) searchKey : ", searchKey)
+	log.Debug("(Get) data : ", data)
+	log.Debug("(Get) pKey : ", this.pKey)
+	log.Debug("(Get) theMap : ", this.theMap)
 
 	///////// Need to be fixed ////////
 	dumpTable := true
@@ -118,18 +120,18 @@ func (this *Table) Get(searchKey []string, data map[string]interface{}) ([]*Reco
 	pKeyHash, pKeyValueHash := ConstructKey(this.pKey, data)
 	searchKeyHash, searchKeyValueHash := ConstructKey(searchKey, data)
 
-	log.Println("pKeyValueHash : ", pKeyValueHash)
-	log.Println("searchKeyValueHash : ", searchKeyValueHash)
+	log.Debug("(Get) pKeyValueHash : ", pKeyValueHash)
+	log.Debug("(Get) searchKeyValueHash : ", searchKeyValueHash)
 
 	searchByPKey := true
 	if searchKeyHash == pKeyHash {
-		log.Println("Get by primary key !")
+		log.Debug("(Get) Get by primary key !")
 		record := this.theMap[pKeyValueHash]
 		if nil != record {
 			records = append(records, record)
 		}
 	} else {
-		log.Println("Get by indexed search key !")
+		log.Debug("(Get) Get by indexed search key !")
 		searchByPKey = false
 		pKeyValueHashs := this.theIndexedKey[searchKeyHash][searchKeyValueHash]
 		if nil != pKeyValueHashs {
@@ -148,9 +150,9 @@ func (this *Table) Get(searchKey []string, data map[string]interface{}) ([]*Reco
 }
 
 func (this *Table) Upsert(data map[string]interface{}) (*Record, *Record) {
-	log.Println("data : ", data)
-	log.Println("pKey : ", this.pKey)
-	log.Println("theMap before : ", this.theMap)
+	log.Debug("(Upsert) data : ", data)
+	log.Debug("(Upsert) pKey : ", this.pKey)
+	log.Debug("(Upsert) theMap before : ", this.theMap)
 
 	_, pKeyValueHash := ConstructKey(this.pKey, data)
 	record := this.theMap[pKeyValueHash]
@@ -185,15 +187,15 @@ func (this *Table) Upsert(data map[string]interface{}) (*Record, *Record) {
 		}
 	}
 
-	log.Println("theMap after : ", this.theMap)
+	log.Debug("(Upsert) theMap after : ", this.theMap)
 
 	return record, oldRecord
 }
 
 func (this *Table) Delete(data map[string]interface{}) *Record {
-	log.Println("data : ", data)
-	log.Println("pKey : ", this.pKey)
-	log.Println("theMap before : ", this.theMap)
+	log.Debug("(Delete) data : ", data)
+	log.Debug("(Delete) pKey : ", this.pKey)
+	log.Debug("(Delete) theMap before : ", this.theMap)
 
 	_, pKeyValueHash := ConstructKey(this.pKey, data)
 	record := this.theMap[pKeyValueHash]
@@ -202,7 +204,7 @@ func (this *Table) Delete(data map[string]interface{}) *Record {
 		delete(this.theMap, pKeyValueHash)
 	}
 
-	log.Println("theMap after : ", this.theMap)
+	log.Debug("(Delete) theMap after : ", this.theMap)
 
 	return record
 }
@@ -221,9 +223,9 @@ func (this *Table) SaveData(file *os.File) {
 }
 
 func (this *Table) GenerateKeys(arr []string, data []string, start int, end int, index int, r int) {
-	log.Println("GenerateKeys, index = ", index, ", r = ", r, ", arr", arr)
+	log.Debug("(GenerateKeys) GenerateKeys, index = ", index, ", r = ", r, ", arr", arr)
 	if index == r {
-		log.Println("GenerateKeys, data = ", data)
+		log.Debug("(GenerateKeys) GenerateKeys, data = ", data)
 		key := make([]string, 0)
 		for j := 0; j < r; j++ {
 			key = append(key, data[j])
@@ -284,8 +286,8 @@ func KeyFromDataArray(elements []interface{}) CompositKey {
 }
 
 func ConstructKey(keyNameStrs []string, tuple map[string]interface{}) (CompositKey, CompositKey) {
-	log.Println("keyNameStrs : ", keyNameStrs)
-	log.Println("tuple : ", tuple)
+	log.Debug("(ConstructKey) keyNameStrs : ", keyNameStrs)
+	log.Debug("(ConstructKey) tuple : ", tuple)
 
 	/* build key */
 	key := make([]interface{}, len(keyNameStrs))
@@ -294,29 +296,8 @@ func ConstructKey(keyNameStrs []string, tuple map[string]interface{}) (CompositK
 		key[j] = tuple[keyNameStr]
 		keyFields[j] = keyNameStr
 	}
-	log.Println("keyFields : ", keyFields)
-	log.Println("key : ", key)
+	log.Debug("(ConstructKey) keyFields : ", keyFields)
+	log.Debug("(ConstructKey) key : ", key)
 
 	return KeyFromDataArray(keyFields), KeyFromDataArray(key)
 }
-
-/*
-func combination(arr []string, data []string, start int, end int, index int, r int, combs []string) {
-    if (index == r) {
-        comb := ""
-        for j:=0; j<r; j++ {
-            if(j!=0)
-            	comb = fmt.sprint("%s ", comb)
-            comb += data[j]
-        }
-        combs = append(combs, comb)
-        return
-    }
-
-    i := start
-    while i <= end && (end- i + 1) >= (r - index) {
-        data[index] = arr[i]
-        combination(arr, data, i + 1, end, index + 1, r, combs)
-        i += 1
-    }
-}*/
