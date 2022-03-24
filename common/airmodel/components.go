@@ -264,7 +264,9 @@ func NewLogic(
 	metadata map[string]interface{},
 	errorHandler map[string]interface{}) (Logic, error) {
 
-	//log.Debug(">>>>>>>>>> Logics >>>>>>>>>>>>> category = ", category, ", filename = ", filename)
+	log.Info(">>>>>>>>>> Logics >>>>>>>>>>>>> category = ", category, ", filename = ", filename)
+	log.Info("metadata = ", metadata)
+	log.Info("errorHandler = ", errorHandler)
 	data, err := FromFile(filename)
 	iDefaultActivities := objectbuilder.LocateObject(data, "root.resources[0].data.tasks[]")
 	var defaultActivities []interface{}
