@@ -389,7 +389,7 @@ func (this Logic) Build(subflowID string, last bool) {
 		_ = objectbuilder.SetObject(this.data, "root.resources[0].data.links[]", links)
 	}
 	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.metadata", this.metadata)
-	//_ = objectbuilder.SetObject(this.data, "root.resources[0].data.errorHandler", this.errorHandler)
+	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.errorHandler", this.errorHandler)
 	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.name", fmt.Sprintf("%s_%d", this.category, this.sn))
 	_ = objectbuilder.SetObject(this.data, "root.resources[0].id", fmt.Sprintf("flow:%s_%d", this.category, this.sn))
 	if "Dummy" != this.name {
