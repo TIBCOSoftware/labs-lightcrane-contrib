@@ -399,6 +399,7 @@ func (this Logic) Build(subflowID string, last bool) {
 			fmt.Sprintf("=string.concat(\"########## %s_%d(%s) ########## : gateway = \", $flow.gateway, \", reading = { ... }, enriched = \", coerce.toString($flow.enriched))", this.category, this.sn, this.name))
 	}
 	this.addNamespace4Properties(fmt.Sprintf("%s_%d", this.category, this.sn))
+	log.Info("XXXXXXXXXXXXXXXXX this.data = ", this.data)
 }
 
 func (this Logic) GetData() map[string]interface{} {
