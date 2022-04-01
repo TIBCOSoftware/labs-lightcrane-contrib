@@ -4,24 +4,6 @@
  * in the license file that is distributed with this file.
  */
 
-/*
-	{
-		"imports": [],
-		"name": "ProjectAirApplication",
-		"description": "",
-		"version": "1.0.0",
-		"type": "flogo:app",
-		"appModel": "1.1.1",
-		"feVersion": "2.9.0",
-		"triggers": [],
-		"resources": [],
-		"properties": [],
-		"connections": {},
-		"contrib": "",
-		"fe_metadata": ""
-	}
-*/
-
 package airparameterbuilder
 
 import (
@@ -30,12 +12,10 @@ import (
 	"strings"
 	"sync"
 
-	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
 
-	//	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/objectbuilder"
-	model "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/airmodel"
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
@@ -52,6 +32,7 @@ const (
 	iApplicationName            = "ApplicationName"
 	iApplicationProperties      = "ApplicationProperties"
 	iFlogoAppDescriptor         = "FlogoAppDescriptor"
+	iRunner                     = "Runner"
 	iExtra                      = "extra"
 	iPorts                      = "ports"
 	iProperties                 = "properties"
@@ -67,7 +48,6 @@ const (
 type ParameterBuilderActivity struct {
 	metadata    *activity.Metadata
 	mux         sync.Mutex
-	templates   map[string]*model.FlogoTemplateLibrary
 	pathMappers map[string]*kwr.KeywordMapper
 	variables   map[string]map[string]string
 	gProperties map[string][]map[string]interface{}
@@ -76,7 +56,6 @@ type ParameterBuilderActivity struct {
 func NewActivity(metadata *activity.Metadata) activity.Activity {
 	aParameterBuilderActivity := &ParameterBuilderActivity{
 		metadata:    metadata,
-		templates:   make(map[string]*model.FlogoTemplateLibrary),
 		pathMappers: make(map[string]*kwr.KeywordMapper),
 		variables:   make(map[string]map[string]string),
 		gProperties: make(map[string][]map[string]interface{}),
@@ -94,11 +73,6 @@ func (a *ParameterBuilderActivity) Eval(context activity.Context) (done bool, er
 	log.Debug("[ParameterBuilderActivity:Eval] entering ........ ")
 	defer log.Debug("[ParameterBuilderActivity:Eval] Exit ........ ")
 
-	_, gProperties, err := a.getTemplateLibrary(context)
-	if err != nil {
-		return false, err
-	}
-
 	serviceType, ok := context.GetInput(iServiceType).(string)
 	if !ok {
 		return false, errors.New("Invalid Service Type ... ")
@@ -115,9 +89,27 @@ func (a *ParameterBuilderActivity) Eval(context activity.Context) (done bool, er
 	        Construct Pipeline
 	**********************************/
 
+	var gProperties []map[string]interface{}
+	var runner string
 	var ports []interface{}
 	var appProperties []interface{}
 	var extraArray []interface{}
+
+	/* If runner defined */
+	if nil != flogoAppDescriptor[iRunner] {
+		runner = flogoAppDescriptor[iRunner].(string)
+	}
+
+	if "docker-compose.yml" != runner {
+		gProperties, err = a.getProperties(context)
+		if err != nil {
+			gProperties = nil
+		}
+	}
+
+	if nil != gProperties {
+		gProperties = make([]map[string]interface{}, 0)
+	}
 
 	/* If any server port defined */
 	if nil != flogoAppDescriptor[iPorts] {
@@ -397,33 +389,19 @@ func (a *ParameterBuilderActivity) createK8sF1Properties(
 	return description, nil
 }
 
-func (a *ParameterBuilderActivity) getTemplateLibrary(ctx activity.Context) (*model.FlogoTemplateLibrary, []map[string]interface{}, error) {
+func (a *ParameterBuilderActivity) getProperties(ctx activity.Context) ([]map[string]interface{}, error) {
 
-	log.Debug("[ParameterBuilderActivity:getTemplate] entering ........ ")
-	defer log.Debug("[ParameterBuilderActivity:getTemplate] exit ........ ")
+	log.Debug("[ParameterBuilderActivity:getProperties] entering ........ ")
+	defer log.Debug("[ParameterBuilderActivity:getProperties] exit ........ ")
 
 	myId := util.ActivityId(ctx)
-	templateLib := a.templates[myId]
 	gProperties := a.gProperties[myId]
 
-	if nil == templateLib {
+	if nil == gProperties {
 		a.mux.Lock()
 		defer a.mux.Unlock()
-		templateLib = a.templates[myId]
 		gProperties = a.gProperties[myId]
-		if nil == templateLib {
-			templateFolderSetting, exist := ctx.GetSetting(sTemplateFolder)
-			if !exist {
-				return nil, nil, activity.NewError("Template is not configured", "PipelineBuilder-4002", nil)
-			}
-			templateFolder := templateFolderSetting.(string)
-			var err error
-			templateLib, err = model.NewFlogoTemplateLibrary(templateFolder)
-			if nil != err {
-				return nil, nil, err
-			}
-
-			a.templates[myId] = templateLib
+		if nil == gProperties {
 			gPropertiesSetting, exist := ctx.GetSetting(sProperties)
 			gProperties = make([]map[string]interface{}, 0)
 			if exist {
@@ -434,7 +412,7 @@ func (a *ParameterBuilderActivity) getTemplateLibrary(ctx activity.Context) (*mo
 			a.gProperties[myId] = gProperties
 		}
 	}
-	return templateLib, gProperties, nil
+	return gProperties, nil
 }
 
 func (a *ParameterBuilderActivity) getVariableMapper(ctx activity.Context) (*kwr.KeywordMapper, map[string]string, error) {
