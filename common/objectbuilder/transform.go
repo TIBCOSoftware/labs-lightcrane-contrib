@@ -59,6 +59,9 @@ func CreateDockerF1Properties(
 		})
 	}
 	index := 0
+
+	//	System_ExternalEndpointPort
+
 	for _, port := range ports {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
 			"Name":  pathMapper.Replace(fmt.Sprintf("%s.ports[%d]", propertyPrefix, index), defVariable),
