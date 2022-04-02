@@ -99,6 +99,7 @@ func (a *ParameterBuilderActivity) Eval(context activity.Context) (done bool, er
 	if nil != flogoAppDescriptor[iRunner] {
 		runner = flogoAppDescriptor[iRunner].(string)
 	}
+	log.Debug("[ParameterBuilderActivity:Eval]  Runner : ", runner)
 
 	if "docker-compose.yml" != runner {
 		gProperties, err = a.getProperties(context)
@@ -107,7 +108,7 @@ func (a *ParameterBuilderActivity) Eval(context activity.Context) (done bool, er
 		}
 	}
 
-	if nil != gProperties {
+	if nil == gProperties {
 		gProperties = make([]map[string]interface{}, 0)
 	}
 
