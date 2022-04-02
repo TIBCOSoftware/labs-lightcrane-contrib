@@ -18,6 +18,17 @@ import (
 
 var log = logger.GetLogger("tibco-labs-lib-objectbuilder")
 
+func Ymal2FlogoProperties(yamlDescriptor map[string]interface{}) []interface{} {
+	handler := AirYmal2FlogoProperties{properties: make(map[string]interface{})}
+	walker := NewGOLangObjectWalker(handler)
+	walker.Start(yamlDescriptor)
+	propArray := make([]interface{}, 0)
+	for _, prop := range handler.GetData() {
+		propArray = append(propArray, prop)
+	}
+	return propArray
+}
+
 type AirYmal2FlogoProperties struct {
 	properties map[string]interface{}
 }
