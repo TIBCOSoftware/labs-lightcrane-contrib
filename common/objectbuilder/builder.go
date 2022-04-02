@@ -7,17 +7,44 @@ package objectbuilder
 
 import (
 	"bytes"
-	//	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
-	//"strings"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 /* GOLangObjectHandler : for build app */
 
 var log = logger.GetLogger("tibco-labs-lib-objectbuilder")
+
+type AirYmal2FlogoProperties struct {
+	properties map[string]interface{}
+}
+
+func (this AirYmal2FlogoProperties) HandleElements(namespace ElementId, element interface{}, dataType interface{}) interface{} {
+	log.Debug("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
+	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
+		name := namespace.GetId()[0]
+		log.Info("(fnAirYmal2FlogoProperties.HandleElements) this.properties : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
+		this.properties[name[strings.Index(name, ".")+1:]] = element
+		log.Info("(fnAirYmal2FlogoProperties.HandleElements) this.properties = ", this.properties)
+	}
+	return nil
+}
+
+func (this AirYmal2FlogoProperties) GetData() []map[string]interface{} {
+	log.Debug("(fnAirYmal2FlogoProperties.GetData) this.properties = ", this.properties)
+	propertiesArray := make([]map[string]interface{}, 0)
+	for name, value := range this.properties {
+		propertiesArray = append(propertiesArray, map[string]interface{}{
+			"Name":  name,
+			"Value": value,
+		})
+	}
+	log.Debug("(fnAirYmal2FlogoProperties.GetData) propertiesArray = ", propertiesArray)
+	return propertiesArray
+}
 
 type FlogoBuilder struct {
 }
