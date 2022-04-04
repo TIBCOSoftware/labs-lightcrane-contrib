@@ -26,6 +26,9 @@ func (fnModelArtifactMap) Sig() (paramTypes []data.Type, isVariadic bool) {
 
 func (fnModelArtifactMap) Eval(params ...interface{}) (interface{}, error) {
 	folderMap := make([]interface{}, 0)
+	if nil == params[0] {
+		return folderMap
+	}
 	var index int = 0
 	for _, prop := range params[0].([]interface{}) {
 		name := util.GetPropertyElementAsString("Name", prop)
