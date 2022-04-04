@@ -34,7 +34,7 @@ type AirYmal2FlogoProperties struct {
 }
 
 func (this AirYmal2FlogoProperties) HandleElements(namespace ElementId, element interface{}, dataType interface{}) interface{} {
-	log.Debug("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
+	//log.Debug("name space : ", namespace.GetId(), ", element = ", element, ", dataType = ", dataType)
 	if "[]interface{}" != dataType && "map[string]interface{}" != dataType {
 		name := namespace.GetId()[0]
 		log.Info("(fnAirYmal2FlogoProperties.HandleElements) this.properties : Name = ", name[strings.Index(name, ".")+1:], ", Value = ", element)
@@ -45,7 +45,7 @@ func (this AirYmal2FlogoProperties) HandleElements(namespace ElementId, element 
 }
 
 func (this AirYmal2FlogoProperties) GetData() []map[string]interface{} {
-	log.Debug("(fnAirYmal2FlogoProperties.GetData) this.properties = ", this.properties)
+	//log.Debug("(fnAirYmal2FlogoProperties.GetData) this.properties = ", this.properties)
 	propertiesArray := make([]map[string]interface{}, 0)
 	for name, value := range this.properties {
 		propertiesArray = append(propertiesArray, map[string]interface{}{
@@ -53,7 +53,7 @@ func (this AirYmal2FlogoProperties) GetData() []map[string]interface{} {
 			"Value": value,
 		})
 	}
-	log.Debug("(fnAirYmal2FlogoProperties.GetData) propertiesArray = ", propertiesArray)
+	//log.Debug("(fnAirYmal2FlogoProperties.GetData) propertiesArray = ", propertiesArray)
 	return propertiesArray
 }
 
@@ -66,12 +66,12 @@ func (this FlogoBuilder) Build(handler GOLangObjectHandler, object interface{}) 
 }
 
 func (this FlogoBuilder) GetData() []map[string]interface{} {
-	log.Debug("(FlogoBuilder.GetData) Should be overrided!!")
+	//log.Debug("(FlogoBuilder.GetData) Should be overrided!!")
 	return nil
 }
 
 func (this FlogoBuilder) HandleElements(namespace ElementId, element interface{}, dataType interface{}) interface{} {
-	log.Debug("(FlogoBuilder.HandleElements) Should be overrided!!")
+	//log.Debug("(FlogoBuilder.HandleElements) Should be overrided!!")
 	return nil
 }
 
@@ -125,10 +125,10 @@ type FlogoAppBuilder struct {
 
 func (this FlogoAppBuilder) HandleElements(namespace ElementId, element interface{}, dataType interface{}) interface{} {
 	elementIds := namespace.GetId()
-	log.Debug("Handle : id = ", elementIds, ", element = ", element, ", type = ", dataType)
+	//log.Debug("Handle : id = ", elementIds, ", element = ", element, ", type = ", dataType)
 	for _, elementId := range elementIds {
 		elementDef := this.arrtibuteMap[elementId]
-		log.Debug("map = ", this.arrtibuteMap, ", key = ", elementId, ", value = ", elementDef)
+		//log.Debug("map = ", this.arrtibuteMap, ", key = ", elementId, ", value = ", elementDef)
 		if nil != elementDef {
 			return elementDef.GetDValue()
 		}
@@ -188,10 +188,10 @@ type ObjectLocator struct {
 
 func (this ObjectLocator) HandleElements(namespace ElementId, element interface{}, dataType interface{}) interface{} {
 	elementIds := namespace.GetId()
-	log.Debug("Handle : id = ", elementIds, ", element = ", element, ", type = ", dataType)
+	//log.Debug("Handle : id = ", elementIds, ", element = ", element, ", type = ", dataType)
 	for _, elementId := range elementIds {
 		elementDef := this.arrtibuteMap[elementId]
-		log.Debug("map = ", this.arrtibuteMap, ", key = ", elementId, ", value = ", elementDef)
+		//log.Debug("map = ", this.arrtibuteMap, ", key = ", elementId, ", value = ", elementDef)
 		if nil != elementDef {
 			elementDef.SetDValue(element)
 			return nil
@@ -259,24 +259,24 @@ func (this *ElementId) SetName(name string) {
 }
 
 func (this *ElementId) updateIndex(index int, maxIndex int) {
-	log.Debug("   Before updateIndex : ", this.namespace, ", index : ", index)
+	//log.Debug("[ElementId]   Before updateIndex : ", this.namespace, ", index : ", index)
 	this.namespace[len(this.namespace)-1].index = index
 	this.namespace[len(this.namespace)-1].maxIndex = maxIndex
-	log.Debug("   After updateIndex : ", this.namespace, ", index : ", index)
+	//log.Debug("[ElementId]   After updateIndex : ", this.namespace, ", index : ", index)
 }
 
 func (this *ElementId) enterScope(scopename string, isArray bool) {
-	log.Debug("Before enterScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
+	//log.Debug("[ElementId] Before enterScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
 	this.name = nil
 	this.namespace = append(this.namespace, Scope{name: scopename, array: isArray, index: -1, maxIndex: -1})
-	log.Debug("After enterScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
+	//log.Debug("[ElementId] After enterScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
 }
 
 func (this *ElementId) leaveScope(scopename string, isArray bool) {
-	log.Debug("Before leaveScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
+	//log.Debug("[ElementId] Before leaveScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
 	this.namespace = this.namespace[:len(this.namespace)-1]
 	this.name = nil
-	log.Debug("After leaveScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
+	//log.Debug("[ElementId] After leaveScope : ", this.namespace, ", ID = ", this.GetId()) //, ", index : ", this.namespace[len(this.namespace)-1].index)
 }
 
 /** Element **/
@@ -346,7 +346,7 @@ func NewGOLangObjectWalker(objectHandler GOLangObjectHandler) GOLangObjectWalker
 }
 
 func (this *GOLangObjectWalker) Start(objectData interface{}) interface{} {
-	log.Debug("%%%%%%%", objectData)
+	//log.Debug("[GOLangObjectWalker:start] %%%%%%%", objectData)
 	this.walk("root", objectData)
 	return objectData
 }
@@ -364,7 +364,7 @@ func (this *GOLangObjectWalker) walk(name string, data interface{}) interface{} 
 				maxIndex := len(dataArray) - 1
 				for index, subdata := range dataArray {
 					this.updateIndex(index, maxIndex)
-					log.Debug("=====>", name, " ===>", subdata)
+					//log.Debug("[GOLangObjectWalker:walk] =====>", name, " ===>", subdata)
 					this.walk(name, subdata)
 				}
 				this.updateIndex(-1, -1)
@@ -395,7 +395,7 @@ func (this *GOLangObjectWalker) walk(name string, data interface{}) interface{} 
 	default:
 		{
 			this.ElementId.SetName(name)
-			log.Debug("Got element -> ", name, ", --> ", data, ", --> ", reflect.TypeOf(data).String())
+			//log.Debug("[GOLangObjectWalker:walk] Got element -> ", name, ", --> ", data, ", --> ", reflect.TypeOf(data).String())
 			modifiedData = this.objectHandler.HandleElements(this.ElementId, data, reflect.TypeOf(data).String())
 		}
 	}
@@ -403,22 +403,22 @@ func (this *GOLangObjectWalker) walk(name string, data interface{}) interface{} 
 }
 
 func (this *GOLangObjectWalker) startArray(name string) {
-	log.Debug("Start Array before scope -> ", name, ", ", this.namespace)
+	//log.Debug("[GOLangObjectWalker:startArray] Start Array before scope -> ", name, ", ", this.namespace)
 	this.ElementId.enterScope(name, true)
-	log.Debug("Start Array after scope -> ", name, ", ", this.namespace)
+	//log.Debug("[GOLangObjectWalker:startArray] Start Array after scope -> ", name, ", ", this.namespace)
 }
 
 func (this *GOLangObjectWalker) endArray(name string) {
-	log.Debug("End Array -> ", name)
+	//log.Debug("[GOLangObjectWalker:endArray] End Array -> ", name)
 	this.ElementId.leaveScope(name, true)
 }
 
 func (this *GOLangObjectWalker) startObject(name string) {
 	this.ElementId.enterScope(name, false)
-	log.Debug("Start Object -> ", name, ", ", this.namespace)
+	//log.Debug("[GOLangObjectWalker:startObject] Start Object -> ", name, ", ", this.namespace)
 }
 
 func (this *GOLangObjectWalker) endObject(name string) {
-	log.Debug("End Object -> ", name)
+	//log.Debug("[GOLangObjectWalker:endObject] End Object -> ", name)
 	this.ElementId.leaveScope(name, false)
 }
