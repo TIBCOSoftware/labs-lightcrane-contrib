@@ -105,7 +105,7 @@ func (a *FileWriterActivity) getPathMapper(ctx activity.Context) (*kwr.KeywordMa
 		if nil == mapper {
 			variables = make(map[string]string)
 			variablesDef, _ := ctx.GetSetting(sVariablesDef)
-			log.Debug("Processing handlers : variablesDef = ", variablesDef)
+			log.Debug("(FileWriterActivity.getPathMapper) Processing handlers : variablesDef = ", variablesDef)
 			for _, variableDef := range variablesDef.([]interface{}) {
 				variableInfo := variableDef.(map[string]interface{})
 				variables[variableInfo["Name"].(string)] = variableInfo["Type"].(string)
@@ -136,8 +136,8 @@ func (a *FileWriterActivity) getPathMapper(ctx activity.Context) (*kwr.KeywordMa
 func (a *FileWriterActivity) prepareFolder(outputFile string) error {
 	outputFolder := filepath.Dir(outputFile)
 
-	log.Debug("Output file : ", outputFile)
-	log.Debug("Output folder : ", outputFolder)
+	log.Debug("(FileWriterActivity.prepareFolder) Output file : ", outputFile)
+	log.Debug("(FileWriterActivity.prepareFolder) Output folder : ", outputFolder)
 
 	// Check if folder exists
 	_, err := os.Stat(outputFolder)
@@ -176,7 +176,7 @@ func (a *FileWriterActivity) handelFile(outputFile string, dataEnvelop interface
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	log.Debug("(Eval) File name : ", outputFile)
+	log.Debug("(FileWriterActivity.handelFile) File name : ", outputFile)
 	f, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		panic(err)
@@ -203,15 +203,15 @@ func (a *FileWriterActivity) handelZipFile(fullFilename string, dataEnvelop inte
 
 	folder := filepath.Dir(fullFilename)
 	for _, f := range zipReader.File {
-		log.Debug("processing file ", f.Name)
+		log.Debug("(FileWriterActivity.handelZipFile) processing file ", f.Name)
 		filePath := filepath.Join(folder, f.Name)
 		if f.FileInfo().IsDir() {
-			log.Debug("creating directory...")
+			log.Debug("(FileWriterActivity.handelZipFile) creating directory...")
 			os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}
 
-		log.Debug("unzipping file ", filePath)
+		log.Debug("(FileWriterActivity.handelZipFile) unzipping file ", filePath)
 		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 			panic(err)
 		}

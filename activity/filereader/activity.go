@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 const (
@@ -59,6 +59,7 @@ func (a *FileReaderActivity) Eval(context activity.Context) (done bool, err erro
 	if "" != baseFolder {
 		filePattern = fmt.Sprintf("%s/%s", baseFolder, filePattern)
 	}
+	log.Debug("(FileReaderActivity.Eval) filePattern = ", filePattern)
 
 	results := make([]map[string]interface{}, 0)
 	content, err := readFile(filePattern)
@@ -70,7 +71,7 @@ func (a *FileReaderActivity) Eval(context activity.Context) (done bool, err erro
 			return false, err
 		}
 
-		log.Info("(FileReaderActivity.Eval) File pattern : ", filePattern, ", matches : ", matches)
+		log.Debug("(FileReaderActivity.Eval) File pattern : ", filePattern, ", matches : ", matches)
 
 		for _, filename := range matches {
 			content, err := readFile(filename)
@@ -84,7 +85,7 @@ func (a *FileReaderActivity) Eval(context activity.Context) (done bool, err erro
 		results = append(results, map[string]interface{}{"Filename": filePattern, "Content": content})
 	}
 
-	log.Debug("(FileReaderActivity.Eval) results : ", results)
+	//log.Debug("(FileReaderActivity.Eval) results : ", results)
 	context.SetOutput(oResults, results)
 
 	return true, nil
@@ -114,9 +115,9 @@ func (a *FileReaderActivity) getBaseFolder(context activity.Context) (string, er
 }
 
 func readFile(filename string) (string, error) {
-	log.Debug("(FileReaderActivity.readFile) filename = ", filename)
+	//log.Debug("(FileReaderActivity.readFile) filename = ", filename)
 	fileContent, err := ioutil.ReadFile(filename)
-	log.Debug("(FileReaderActivity.readFile) fileContent = ", fileContent)
+	//log.Debug("(FileReaderActivity.readFile) fileContent = ", fileContent)
 	if err != nil {
 		log.Error("File reading error", err)
 		return "", err
