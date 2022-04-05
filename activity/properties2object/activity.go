@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 var log = logger.GetLogger("tibco-model-ops-cmdconverter")
@@ -57,6 +57,7 @@ func (a *Properties2ObjectActivity) Eval(context activity.Context) (done bool, e
 	defer log.Debug("[Properties2ObjectActivity:Eval] Exit ........ ")
 
 	propertiesGroups, ok := context.GetInput(iProperties).([]interface{})
+	log.Info(context.GetInput(iProperties))
 	if !ok {
 		return true, errors.New("Illegal input propertiesGroup!!")
 	}
@@ -138,10 +139,10 @@ func (a *Properties2ObjectActivity) buildObject(
 					}
 					if index == len(keyElements)-1 {
 						/* It's an primitive array element.*/
-						current[key] = append(current[key].([]interface{}), propertyValue)
+						current[key] = addArrayElement(current[key].([]interface{}), propertyValue, slot)
 					} else {
 						for len(current[key].([]interface{}))-1 < slot {
-							current[key] = append(current[key].([]interface{}), make(map[string]interface{}))
+							current[key] = addArrayElement(current[key].([]interface{}), make(map[string]interface{}), slot)
 						}
 						current = current[key].([]interface{})[slot].(map[string]interface{})
 					}
@@ -161,7 +162,7 @@ func (a *Properties2ObjectActivity) buildObject(
 		}
 	}
 
-	log.Debug("propertiesObj : ", propertiesObj)
+	log.Debug("(Properties2ObjectActivity.buildObject) propertiesObj : ", propertiesObj)
 
 	return propertiesObj, nil
 }
@@ -207,4 +208,20 @@ func (a *Properties2ObjectActivity) getVariableMapper(ctx activity.Context) (*kw
 		}
 	}
 	return mapper, nil
+}
+
+func addArrayElement(array []interface{}, data interface{}, position int) []interface{} {
+
+	log.Debug("(Properties2ObjectActivity.addArrayElement) position : ", position, ", array : ", array)
+
+	if nil != array && len(array) >= position+1 {
+		array[position] = data
+		return array
+	}
+	newArray := make([]interface{}, position+1)
+	for index, value := range array {
+		newArray[index] = value
+	}
+	newArray[position] = data
+	return newArray
 }
