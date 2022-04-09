@@ -122,20 +122,27 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 		}
 
 		header, _ := a.getHeader(context)
+		var reqBody []byte
 		var body []byte
 		if "GET" == method.(string) {
 			body, statusCode, err = a.get(url, header, timeout)
 		} else if "DELETE" == method.(string) {
 			body, statusCode, err = a.delete(url, header, timeout)
 		} else if "POST" == method.(string) {
-			reqBody, ok := context.GetInput(iBody).(string)
-			if !ok {
+			if inBody, ok := context.GetInput(iBody).(string); ok {
+				reqBody = []byte(inBody)
+			} else if inBody, ok := context.GetInput(iBody).([]byte); ok {
+				reqBody = inBody
+			} else {
 				return false, errors.New("Invalid request body ... ")
 			}
-			body, statusCode, err = a.post(url, header, timeout, []byte(reqBody))
+			body, statusCode, err = a.post(url, header, timeout, (reqBody))
 		} else if "PUT" == method.(string) {
-			reqBody, ok := context.GetInput(iBody).(string)
-			if !ok {
+			if inBody, ok := context.GetInput(iBody).(string); ok {
+				reqBody = []byte(inBody)
+			} else if inBody, ok := context.GetInput(iBody).([]byte); ok {
+				reqBody = inBody
+			} else {
 				return false, errors.New("Invalid request body ... ")
 			}
 			body, statusCode, err = a.put(url, header, timeout, []byte(reqBody))
