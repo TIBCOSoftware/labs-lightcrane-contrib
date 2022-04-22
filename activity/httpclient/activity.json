@@ -103,8 +103,16 @@
 			"type": "string"
 		},
 		{
-			"name": "Body",
+			"name": "Headers",
+			"type": "array"
+		},
+		{
+			"name": "Method",
 			"type": "string"
+		},
+		{
+			"name": "Body",
+			"type": "any"
 		},
 		{
             "name": "Variables",

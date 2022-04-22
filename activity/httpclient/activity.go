@@ -33,6 +33,7 @@ const (
 	sVariablesDef  = "variablesDef"
 	sHttpHeaders   = "httpHeaders"
 	iURL           = "URL"
+	iHeaders       = "Headers"
 	iMethod        = "Method"
 	iBody          = "Body"
 	iVariable      = "Variables"
@@ -104,7 +105,7 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 		var method interface{}
 		runtimeMethod, ok := context.GetInput(iMethod).(string)
 		log.Debug("[HTTPClientActivity:Eval] Runtime method : ", runtimeMethod)
-		if !ok {
+		if !ok || "" == runtimeMethod {
 			method, ok = context.GetSetting(sMethod)
 			if !ok {
 				return false, errors.New("Query method not defined!")
@@ -115,13 +116,32 @@ func (a *HTTPClientActivity) Eval(context activity.Context) (done bool, err erro
 		}
 		log.Debug("[HTTPClientActivity:Eval] Query method : ", method)
 
+		var header map[string]string
+		runtimeHeaders, ok := context.GetInput(iHeaders).([]interface{})
+		log.Debug("[HTTPClientActivity:Eval] Runtime headers : ", runtimeHeaders)
+		if !ok || nil == runtimeHeaders {
+			header, err = a.getHeader(context)
+			if nil != err {
+				return false, errors.New("Invalid headers ... ")
+			}
+		} else {
+			header = make(map[string]string)
+			for _, runtimeHeader := range runtimeHeaders {
+				headerInfo := runtimeHeader.(map[string]interface{})
+				if nil != headerInfo["Key"] {
+					header[headerInfo["Key"].(string)] = headerInfo["Value"].(string)
+				} else {
+					header[headerInfo["key"].(string)] = headerInfo["value"].(string)
+				}
+			}
+		}
+
 		timeout := time.Millisecond * time.Duration(10000)
 		t, exist := context.GetSetting(sTimeout)
 		if exist {
 			timeout = time.Millisecond * time.Duration(t.(int))
 		}
 
-		header, _ := a.getHeader(context)
 		var reqBody []byte
 		var body []byte
 		if "GET" == method.(string) {
@@ -244,9 +264,12 @@ func (a *HTTPClientActivity) delete(url string, header map[string]string, timeou
 
 func (a *HTTPClientActivity) post(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:post] request url = ", url)
-	log.Debug("[HTTPClientActivity:post] request body = ", string(data))
+	log.Debug("[HTTPClientActivity:post] request header = ", header)
+	log.Debug("[HTTPClientActivity:post] request body01 = ", data)
+	log.Debug("[HTTPClientActivity:post] request timeout = ", timeout.Milliseconds())
 	defer log.Debug("[HTTPClientActivity:post] exit ... ")
 
+	//req, err := http.NewRequest("POST", url, bytes.NewReader(data))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		log.Error("[HTTPClientActivity:post] Error reading request. ", err)
