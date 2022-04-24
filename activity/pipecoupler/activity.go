@@ -68,6 +68,7 @@ func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err err
 	if !ok {
 		timeout = 30
 	}
+	log.Debug("[PipecouplerActivity:Eval] timeout: ", timeout)
 
 	dataMap, ok := context.GetInput(iData).(*data.ComplexObject).Value.(map[string]interface{})
 	if !ok {
