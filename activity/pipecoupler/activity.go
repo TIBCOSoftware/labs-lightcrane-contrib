@@ -27,6 +27,7 @@ var initialized bool = false
 const (
 	DownstreamHost = "DownstreamHost"
 	Port           = "Port"
+	iTimeout       = "Timeout"
 	iData          = "Data"
 	oReply         = "Reply"
 )
@@ -63,15 +64,16 @@ func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err err
 		return false, err
 	}
 
+	timeout, ok := context.GetInput(iTimeout).(int)
+	if !ok {
+		timeout = 30
+	}
+
 	dataMap, ok := context.GetInput(iData).(*data.ComplexObject).Value.(map[string]interface{})
 	if !ok {
 		log.Warn("No data comes in ... ")
 	}
 	log.Debug("[PipecouplerActivity:Eval] Input data: ", dataMap)
-
-	//var cancel ctx.CancelFunc
-	aContext, cancel := ctx.WithTimeout(ctx.Background(), 20*time.Second)
-	defer cancel()
 
 	var sender string
 	if nil != dataMap["Sender"] {
@@ -86,8 +88,12 @@ func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err err
 		content = dataMap["Content"].(string)
 	}
 
+	//reqContext, cancel := ctx.WithDeadline(context.Background(), time.Now().Add(time.Duration(timeout)*time.Second))
+	reqContext, cancel := ctx.WithTimeout(ctx.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
 	replyObj, err := client.HandleData(
-		aContext,
+		reqContext,
 		&Data{
 			Sender:  sender,
 			ID:      id,

@@ -33,6 +33,10 @@
 	],
     "inputs": [
 		{
+			"name": "Timeout",
+			"type": "int"
+		},
+		{
 			"name": "Data",
 			"type": "complex_object"
 		}
