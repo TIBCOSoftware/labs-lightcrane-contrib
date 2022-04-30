@@ -67,6 +67,11 @@ func (this *Pipeline) Build() (string, error) {
 		}
 		this.contributes.Add(logic.GetContribution())
 		this.imports.Add(logic.GetImports())
+
+		/*
+			Here we turn-on the App.IsListener flag for the logic component (flow)
+			which we defined as notification listener in extra block
+		*/
 		isListener := false
 		for _, listenerGroup := range this.listeners {
 			log.Debug("(Pipeline.Build)  listenerGroup = ", listenerGroup)
@@ -84,6 +89,7 @@ func (this *Pipeline) Build() (string, error) {
 				"value": isListener,
 			},
 		}
+
 		this.properties.Add(logic.GetID(), logic.GetProperties(), logic.GetRawProperties(), properties)
 		this.connections.Add(logic.GetConnections())
 		flogoFlows = append(flogoFlows, logic.GetResource())
@@ -97,6 +103,9 @@ func (this *Pipeline) Build() (string, error) {
 		"string",
 	)
 
+	/*
+		Now we add notifier (flogo trigger) for each listener
+	*/
 	triggers := this.dataSource.GetTriggers()
 	for ID, notifier := range this.notifiers {
 		for _, trigger := range notifier.GetTriggers(ID, this.listeners) {
