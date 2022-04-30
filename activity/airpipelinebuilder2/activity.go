@@ -173,7 +173,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 					runner = logic.GetRunner()
 				}
 				pipeline.AddLogic(logic)
-				if "Rule.Default" == longname || "Rule.Expression" == longname {
+				if "Rule.Default" == longname || "Rule.Expression" == longname || "Rule.TextMatching" == longname {
 					/* Add Notifier */
 					notifier := templateLibrary.GetComponent(index, "Notifier", "Default").(model.Notifier)
 					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, index), notifier)
