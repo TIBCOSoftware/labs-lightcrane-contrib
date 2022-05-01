@@ -219,6 +219,9 @@ func (this Notifier) GetTriggers(notifierID string, listeners map[string]interfa
 	log.Debug("(Notifier.GetTriggers) ========== listeners ->", listeners)
 	triggers := util.DeepCopy(this.data["triggers"]).([]interface{})
 	for _, trigger := range triggers {
+		id := fmt.Sprintf("notificationlistener_%s", notifierID)
+		_ = objectbuilder.SetObject(trigger.(map[string]interface{}), "root.id", id)
+		_ = objectbuilder.SetObject(trigger.(map[string]interface{}), "root.name", id)
 		if nil != listeners[notifierID] {
 			handler := trigger.(map[string]interface{})["handlers"].([]interface{})[0]
 			handlers := make([]interface{}, 0)
