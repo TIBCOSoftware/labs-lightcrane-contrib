@@ -132,6 +132,10 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 
 	pipeline := templateLibrary.GetPipeline()
 
+	/* Add notifier for error handlers */
+	notifier := templateLibrary.GetComponent(0, "Notifier", "Default").(model.Notifier)
+	pipeline.AddNotifier("ErrorHandler", notifier)
+
 	/* Adding data source */
 
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
@@ -173,6 +177,8 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 					runner = logic.GetRunner()
 				}
 				pipeline.AddLogic(logic)
+
+				/* Add notifier for the cmponent which generate notification. */
 				if "Rule.Default" == longname || "Rule.Expression" == longname || "Rule.TextMatching" == longname {
 					/* Add Notifier */
 					notifier := templateLibrary.GetComponent(index, "Notifier", "Default").(model.Notifier)
