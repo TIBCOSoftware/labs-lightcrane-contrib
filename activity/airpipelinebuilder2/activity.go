@@ -220,7 +220,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			logic := templateLibrary.GetComponent(len(logicArray), category, name).(model.Logic)
 			pipeline.AddLogic(logic)
 			notificationListeners["ErrorHandler"] = fmt.Sprintf("%s_%d", category, len(logicArray))
-			log.Debug("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
+			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
 
 			appPropertiesByComponent = append(appPropertiesByComponent,
 				[]interface{}{
@@ -248,7 +248,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 					/* Get notification listeners from request */
 					var listeners map[string]interface{}
 					json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-					log.Debug("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
+					log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
 					/* Merge listeners */
 					for key, value := range listeners {
 						if nil == notificationListeners[key] {
@@ -263,7 +263,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			}
 		}
 	}
-	log.Debug("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
+	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
 	pipeline.SetListeners(notificationListeners)
 
 	descriptorString, _ := pipeline.Build()
