@@ -132,6 +132,11 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 
 	pipeline := templateLibrary.GetPipeline()
 
+	/* Declare notification listener */
+	notificationListeners := map[string]interface{}{
+		"ErrorHandler": make([]string, 0),
+	}
+
 	/* Add notifier for error handlers */
 	notifier := templateLibrary.GetComponent(0, "Notifier", "Default").(model.Notifier)
 	pipeline.AddNotifier("ErrorHandler", notifier)
@@ -214,6 +219,8 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			name := longname[strings.Index(longname, ".")+1:]
 			logic := templateLibrary.GetComponent(len(logicArray), category, name).(model.Logic)
 			pipeline.AddLogic(logic)
+			notificationListeners["ErrorHandler"] = fmt.Sprintf("%s_%d", category, len(logicArray))
+			log.Debug("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
 
 			appPropertiesByComponent = append(appPropertiesByComponent,
 				[]interface{}{
@@ -238,13 +245,26 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 						"Type":  util.GetPropertyElement("Type", property),
 					})
 				} else if "App.NotificationListeners" == name {
+					/* Get notification listeners from request */
 					var listeners map[string]interface{}
 					json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-					pipeline.SetListeners(listeners)
+					log.Debug("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
+					/* Merge listeners */
+					for key, value := range listeners {
+						if nil == notificationListeners[key] {
+							notificationListeners[key] = value
+						} else {
+							for _, name := range value.([]string) {
+								notificationListeners[key] = append(notificationListeners[key].([]string), name)
+							}
+						}
+					}
 				}
 			}
 		}
 	}
+	log.Debug("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
+	pipeline.SetListeners(notificationListeners)
 
 	descriptorString, _ := pipeline.Build()
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
