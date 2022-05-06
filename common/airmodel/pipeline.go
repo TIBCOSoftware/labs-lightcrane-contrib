@@ -41,12 +41,130 @@ type Pipeline struct {
 	data            map[string]interface{} // Application template
 	dataSource      DataSource             // Main flow trigger
 	logics          []Logic                // All subflow
+	normalFlows     []Logic
+	errorFlows      []Logic
 	notifiers       map[string]Notifier
 	listeners       map[string]interface{}
 	contributes     Contributes
 	properties      Properties
 	connections     Connections
 	imports         Imports
+}
+
+func (this *Pipeline) Build2() (string, error) {
+
+	flogoFlows := make([]interface{}, 0)
+	this.dataSource.Build(fmt.Sprintf("%s_%d", this.logics[0].GetCategory(), 0))
+	this.contributes.Add(this.dataSource.GetContribution())
+	this.imports.Add(this.dataSource.GetImports())
+	this.properties.Add(this.dataSource.GetID(), this.dataSource.GetProperties(), this.dataSource.GetRawProperties(), nil)
+	this.connections.Add(this.dataSource.GetConnections())
+	flogoFlows = append(flogoFlows, this.dataSource.GetResource())
+
+	flogoFlows, _ = this.buildFlow(this.normalFlows)
+	flogoFlows, _ = this.buildFlow(this.errorFlows)
+
+	/*
+		Now we add notifier (flogo trigger) for each listener
+	*/
+	triggers := this.dataSource.GetTriggers()
+	for ID, notifier := range this.notifiers {
+		for _, trigger := range notifier.GetTriggers(ID, this.listeners) {
+			triggers = append(triggers, trigger)
+			this.imports.Add(notifier.GetImports())
+		}
+	}
+
+	elementMap := make(map[string]*objectbuilder.Element)
+
+	elementMap["root.triggers[]"] = objectbuilder.NewElement(
+		"triggers",
+		triggers,
+		"[]interface {}",
+	)
+
+	elementMap["root.resources[]"] = objectbuilder.NewElement(
+		"resources",
+		flogoFlows,
+		"[]interface {}",
+	)
+
+	/* populate imports */
+	elementMap["root.imports[]"] = objectbuilder.NewElement(
+		"imports",
+		this.imports.GetImports(),
+		"[]interface {}",
+	)
+
+	/* populate contributes */
+	elementMap["root.contrib"] = objectbuilder.NewElement(
+		"contrib",
+		this.contributes.GetString(),
+		"string",
+	)
+
+	/* populate properties */
+	elementMap["root.properties[]"] = objectbuilder.NewElement(
+		"properties",
+		this.properties.GetProperties(),
+		"[]interface {}",
+	)
+
+	/* populate connections */
+	elementMap["root.connections"] = objectbuilder.NewElement(
+		"connections",
+		this.connections.GetConnections(),
+		"map[string]interface {}",
+	)
+
+	builder := objectbuilder.NewFlogoAppBuilder(elementMap)
+	newPipeline := builder.Build(builder, this.data)
+	jsondata, err := json.Marshal(newPipeline)
+	if nil != err {
+		//log.Debug("Unable to serialize object, reason : ", err.Error())
+		return "", err
+	}
+	return string(jsondata), err
+}
+
+func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
+	flogoFlows := make([]interface{}, 0)
+	for index, logic := range flows {
+		if index < len(this.logics)-1 {
+			logic.Build(fmt.Sprintf("Build normal logic : %s_%d", this.logics[index+1].GetCategory(), index+1), false)
+		} else {
+			logic.Build(fmt.Sprintf("Build normal logic : %s_%d", "", -1), true)
+		}
+		this.contributes.Add(logic.GetContribution())
+		this.imports.Add(logic.GetImports())
+
+		/*
+			Here we turn-on the App.IsListener flag for the logic component (flow)
+			which we defined as notification listener in extra block
+		*/
+		isListener := false
+		for _, listenerGroup := range this.listeners {
+			log.Debug("(Pipeline.Build)  listenerGroup = ", listenerGroup)
+			for _, listener := range listenerGroup.([]interface{}) {
+				log.Debug("(Pipeline.Build)    listener = ", listener)
+				if listener == logic.GetID() {
+					isListener = true
+				}
+			}
+		}
+		properties := []interface{}{
+			map[string]interface{}{
+				"name":  fmt.Sprintf("%s_App.IsListener", logic.GetID()),
+				"type":  "boolean",
+				"value": isListener,
+			},
+		}
+
+		this.properties.Add(logic.GetID(), logic.GetProperties(), logic.GetRawProperties(), properties)
+		this.connections.Add(logic.GetConnections())
+		flogoFlows = append(flogoFlows, logic.GetResource())
+	}
+	return flogoFlows, nil
 }
 
 func (this *Pipeline) Build() (string, error) {
@@ -181,6 +299,14 @@ func (this *Pipeline) SetDataSource(source DataSource) {
 
 func (this *Pipeline) AddLogic(logic Logic) {
 	this.logics = append(this.logics, logic)
+}
+
+func (this *Pipeline) AddNormalLogic(logic Logic) {
+	this.normalFlows = append(this.normalFlows, logic)
+}
+
+func (this *Pipeline) AddErrorLogic(logic Logic) {
+	this.errorFlows = append(this.errorFlows, logic)
 }
 
 func (this *Pipeline) AddNotifier(ID string, notifier Notifier) {
