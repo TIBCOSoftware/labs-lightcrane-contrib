@@ -219,7 +219,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			name := longname[strings.Index(longname, ".")+1:]
 			logic := templateLibrary.GetComponent(len(logicArray), category, name).(model.Logic)
 			pipeline.AddLogic(logic)
-			notificationListeners["ErrorHandler"] = fmt.Sprintf("%s_%d", category, len(logicArray))
+			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("%s_%d", category, len(logicArray)))
 			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
 
 			appPropertiesByComponent = append(appPropertiesByComponent,
@@ -254,8 +254,8 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 						if nil == notificationListeners[key] {
 							notificationListeners[key] = value
 						} else {
-							for _, name := range value.([]string) {
-								notificationListeners[key] = append(notificationListeners[key].([]string), name)
+							for _, name := range value.([]interface{}) {
+								notificationListeners[key] = append(notificationListeners[key].([]interface{}), name)
 							}
 						}
 					}
