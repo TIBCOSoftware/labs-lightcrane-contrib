@@ -134,7 +134,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 
 	/* Declare notification listener */
 	notificationListeners := map[string]interface{}{
-		"ErrorHandler": make([]string, 0),
+		"ErrorHandler": make([]interface{}, 0),
 	}
 
 	/* Add notifier for error handlers */
