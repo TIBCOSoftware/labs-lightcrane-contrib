@@ -136,6 +136,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	notificationListeners := map[string]interface{}{
 		"ErrorHandler": make([]interface{}, 0),
 	}
+	log.Info("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
 
 	/* Add notifier for error handlers */
 	notifier := templateLibrary.GetComponent(0, "Notifier", "Default").(model.Notifier)
@@ -143,6 +144,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 
 	/* Adding data source */
 
+	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
 	longname := sourceObj["name"].(string)
 	category := longname[:strings.Index(longname, ".")]
@@ -167,6 +169,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	appPropertiesByComponent = append(appPropertiesByComponent, appProperties)
 
 	/* Adding logics and find a runner*/
+	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
 	var runner interface{}
 	for key, value := range applicationPipelineDescriptor {
 		switch key {
