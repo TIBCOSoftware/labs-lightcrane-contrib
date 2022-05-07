@@ -341,8 +341,8 @@ func (this Logic) addNamespace4Properties(ID string) {
 	handler.Build(handler, this.data)
 }
 
-func (this Logic) Build(subflowID string, last bool) {
-	log.Info("(Build.Build) name = ", this.name, ", subflow = ", subflowID, ", last = ", last)
+func (this Logic) Build(nextSubflowID string, last bool) {
+	log.Info("(Build.Build) name = ", this.name, ", nextSubflowID = ", nextSubflowID, ", last = ", last)
 	var activities []interface{}
 	if !last {
 		activities = make([]interface{}, len(this.defaultActivities)+len(this.subflowActivities))
@@ -363,7 +363,7 @@ func (this Logic) Build(subflowID string, last bool) {
 						_ = objectbuilder.SetObject(subflowActivities.(map[string]interface{}), "root.activity.input.enriched", "=$activity[NewFlowData].Data.enriched")
 					}
 				}
-				_ = objectbuilder.SetObject(subflowActivities.(map[string]interface{}), "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
+				_ = objectbuilder.SetObject(subflowActivities.(map[string]interface{}), "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", nextSubflowID))
 				index++
 			}
 			activities[index] = activity
@@ -402,7 +402,7 @@ func (this Logic) Build(subflowID string, last bool) {
 			fmt.Sprintf("=string.concat(\"########## %s_%d(%s) ########## : gateway = \", $flow.gateway, \", reading = { ... }, enriched = \", coerce.toString($flow.enriched))", this.category, this.sn, this.name))
 	}
 	this.addNamespace4Properties(fmt.Sprintf("%s_%d", this.category, this.sn))
-	log.Info("(Build.Build) subflowID = ", subflowID, ", this.data = ", this.data)
+	log.Info("(Build.Build) nextSubflowID = ", nextSubflowID, ", this.data = ", this.data)
 }
 
 func (this Logic) GetData() map[string]interface{} {
