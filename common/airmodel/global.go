@@ -144,7 +144,7 @@ func (this *Properties) GetReplacements(appPropertiesByComponent []interface{}) 
 		for _, property := range componentProperties.([]interface{}) {
 			name := property.(map[string]interface{})["Name"].(string)
 			log.Debug("app property name: ", name)
-			if nil != this.propertyMamingMap[index].(map[string]interface{})[name] {
+			if index < len(this.propertyMamingMap) && nil != this.propertyMamingMap[index].(map[string]interface{})[name] {
 				name = this.propertyMamingMap[index].(map[string]interface{})[name].(string)
 				log.Debug("app property name after: ", name)
 				property.(map[string]interface{})["Name"] = this.propertyMamingMap[index].(map[string]interface{})[property.(map[string]interface{})["Name"].(string)]

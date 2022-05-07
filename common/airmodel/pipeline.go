@@ -52,17 +52,19 @@ type Pipeline struct {
 }
 
 func (this *Pipeline) Build2() (string, error) {
-
+	log.Info("(Pipeline.Build2) Build data source : ", this.normalFlows[0].GetCategory())
 	flogoFlows := make([]interface{}, 0)
-	this.dataSource.Build(fmt.Sprintf("%s_%d", this.logics[0].GetCategory(), 0))
+	this.dataSource.Build(fmt.Sprintf("%s_%d", this.normalFlows[0].GetCategory(), 0))
 	this.contributes.Add(this.dataSource.GetContribution())
 	this.imports.Add(this.dataSource.GetImports())
 	this.properties.Add(this.dataSource.GetID(), this.dataSource.GetProperties(), this.dataSource.GetRawProperties(), nil)
 	this.connections.Add(this.dataSource.GetConnections())
 	flogoFlows = append(flogoFlows, this.dataSource.GetResource())
 
-	flogoFlows, _ = this.buildFlow(this.normalFlows)
-	flogoFlows, _ = this.buildFlow(this.errorFlows)
+	normalFlogoFlows, _ := this.buildFlow(this.normalFlows)
+	flogoFlows = append(flogoFlows, normalFlogoFlows...)
+	errorFlogoFlows, _ := this.buildFlow(this.errorFlows)
+	flogoFlows = append(flogoFlows, errorFlogoFlows...)
 
 	/*
 		Now we add notifier (flogo trigger) for each listener
@@ -130,10 +132,11 @@ func (this *Pipeline) Build2() (string, error) {
 func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
 	flogoFlows := make([]interface{}, 0)
 	for index, logic := range flows {
-		if index < len(this.logics)-1 {
-			logic.Build(fmt.Sprintf("Build normal logic : %s_%d", this.logics[index+1].GetCategory(), index+1), false)
+		log.Info("(Pipeline.buildFlow) Build flow : ", logic.GetCategory(), ", index : ", index)
+		if index < len(flows)-1 {
+			logic.Build(fmt.Sprintf("%s_%d", flows[index+1].GetCategory(), index+1), false)
 		} else {
-			logic.Build(fmt.Sprintf("Build normal logic : %s_%d", "", -1), true)
+			logic.Build(fmt.Sprintf("%s_%d", "", -1), true)
 		}
 		this.contributes.Add(logic.GetContribution())
 		this.imports.Add(logic.GetImports())
@@ -144,9 +147,9 @@ func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
 		*/
 		isListener := false
 		for _, listenerGroup := range this.listeners {
-			log.Debug("(Pipeline.Build)  listenerGroup = ", listenerGroup)
+			log.Info("(Pipeline.buildFlow)  listenerGroup = ", listenerGroup)
 			for _, listener := range listenerGroup.([]interface{}) {
-				log.Debug("(Pipeline.Build)    listener = ", listener)
+				log.Info("(Pipeline.buildFlow)    listener = ", listener)
 				if listener == logic.GetID() {
 					isListener = true
 				}
@@ -164,6 +167,7 @@ func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
 		this.connections.Add(logic.GetConnections())
 		flogoFlows = append(flogoFlows, logic.GetResource())
 	}
+	log.Info("(Pipeline.buildFlow) flogoFlows : ", flogoFlows)
 	return flogoFlows, nil
 }
 

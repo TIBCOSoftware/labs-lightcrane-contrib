@@ -70,7 +70,7 @@
 		},
  		{
 			"name": "AirDescriptor",
-			"type": "string"
+			"type": "object"
 		},
  		{
 			"name": "ServiceType",

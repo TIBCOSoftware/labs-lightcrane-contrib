@@ -1,7 +1,7 @@
 package airpipelinebuilder2
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"io/ioutil"
 	"testing"
 
@@ -43,22 +43,31 @@ func TestCreate(t *testing.T) {
 }
 
 func TestEval(t *testing.T) {
-	log.SetLogLevel(logger.InfoLevel) //.DebugLevel)
-
-	descriptor := "{\"source\": {\"name\": \"MQTT\",\"properties\" : [{\"Name\":\"key1\",\"Value\":\"value1\"}]},\"logic\": [{\"name\": \"Dgraph\",\"properties\" : [{\"Name\":\"key1\",\"Value\":\"value1\"}]}]}"
-	//descriptor := "{\"source\": {\"name\": \"Kafka\",\"properties\" : [{\"Name\":\"key1\",\"Value\":\"value1\"}]},\"logic\": [{\"name\": \"Postgres\",\"properties\" : [{\"Name\":\"key1\",\"Value\":\"value1\"}]}]}"
+	log.SetLogLevel(logger.DebugLevel)
+	//log.SetLogLevel(logger.InfoLevel)
 
 	act := NewActivity(getActivityMetadata())
 	tc := test.NewTestActivityContext(getActivityMetadata())
 
 	//setup attrs
-	tc.SetSetting("TemplateFolder", "../../../../../../../../services/builder/docker/airpipeline/")
-	tc.SetInput("AirDescriptor", descriptor)
+	tc.SetSetting("TemplateFolder", "../../../../services/labs-lightcrane-services/air/airpipeline_oss")
 
-	_, err := act.Eval(tc)
-	assert.Nil(t, err)
+	fileContent, err := ioutil.ReadFile("request01.json")
 	if err != nil {
-		t.Errorf("Could not publish a message: %s", err)
+		t.Errorf("Could not get air descriptor: %s", err)
+		t.Fail()
+	}
+	var descriptor map[string]interface{}
+	json.Unmarshal(fileContent, &descriptor)
+	airDescriptor := descriptor["AirDescriptor"]
+	airDescriptor.(map[string]interface{})["properties"] = []interface{}{}
+	tc.SetInput("AirDescriptor", airDescriptor)
+
+	done, err := act.Eval(tc)
+
+	assert.Nil(t, err)
+	if !done || err != nil {
+		t.Errorf("Activity failed : %s", err)
 		t.Fail()
 	}
 }
