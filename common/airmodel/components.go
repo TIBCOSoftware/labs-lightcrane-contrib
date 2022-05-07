@@ -342,7 +342,7 @@ func (this Logic) addNamespace4Properties(ID string) {
 }
 
 func (this Logic) Build(subflowID string, last bool) {
-	//log.Debug("$$$$$$$$$$ name = ", this.name, ", subflow = ", subflowID, ", last = ", last)
+	log.Info("(Build.Build) name = ", this.name, ", subflow = ", subflowID, ", last = ", last)
 	var activities []interface{}
 	if !last {
 		activities = make([]interface{}, len(this.defaultActivities)+len(this.subflowActivities))
@@ -402,7 +402,7 @@ func (this Logic) Build(subflowID string, last bool) {
 			fmt.Sprintf("=string.concat(\"########## %s_%d(%s) ########## : gateway = \", $flow.gateway, \", reading = { ... }, enriched = \", coerce.toString($flow.enriched))", this.category, this.sn, this.name))
 	}
 	this.addNamespace4Properties(fmt.Sprintf("%s_%d", this.category, this.sn))
-	log.Info("XXXXXXXXXXXXXXXXX this.data = ", this.data)
+	log.Info("(Build.Build) subflowID = ", subflowID, ", this.data = ", this.data)
 }
 
 func (this Logic) GetData() map[string]interface{} {
@@ -425,6 +425,10 @@ func (this Logic) Clone(sn int, name string) PipelineComponent {
 
 func (this Logic) GetRunner() interface{} {
 	return this.data["runner"]
+}
+
+func (this Logic) GetNotificationBroker() interface{} {
+	return this.data["notificationBroker"]
 }
 
 func (this Logic) Get(key string) interface{} {
