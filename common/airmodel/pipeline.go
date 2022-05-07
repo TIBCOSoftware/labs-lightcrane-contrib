@@ -134,9 +134,9 @@ func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
 	for index, logic := range flows {
 		log.Info("(Pipeline.buildFlow) Build flow : ", logic.GetCategory(), ", index : ", index)
 		if index < len(flows)-1 {
-			logic.Build(fmt.Sprintf("%s_%d", flows[index+1].GetCategory(), index+1), false)
+			logic.Build(flows[index+1].GetID(), false)
 		} else {
-			logic.Build(fmt.Sprintf("%s_%d", "", -1), true)
+			logic.Build("NA", true)
 		}
 		this.contributes.Add(logic.GetContribution())
 		this.imports.Add(logic.GetImports())
