@@ -129,7 +129,6 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	var appProperties []interface{}
 
 	/* Create a new pipeline */
-
 	pipeline := templateLibrary.GetPipeline()
 
 	/* Declare notification listener */
@@ -143,12 +142,9 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	pipeline.AddNotifier("ErrorHandler", notifier)
 
 	/* Adding data source */
-
 	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
-	longname := sourceObj["name"].(string)
-	category := longname[:strings.Index(longname, ".")]
-	name := longname[strings.Index(longname, ".")+1:]
+	category, name := parseName(sourceObj["name"].(string))
 	dataSource := templateLibrary.GetComponent(-1, category, name).(model.DataSource)
 	pipeline.SetDataSource(dataSource)
 	/* If any server port defined */
@@ -156,17 +152,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		ports = sourceObj[iPorts].([]interface{})
 	}
 	/* Extrace Daynamic Parameter From DataSource */
-	appProperties = make([]interface{}, 0)
-	if nil != sourceObj[iProperties] {
-		for _, property := range sourceObj[iProperties].([]interface{}) {
-			appProperties = append(appProperties, map[string]interface{}{
-				"Name":  util.GetPropertyElement("Name", property),
-				"Value": util.GetPropertyElement("Value", property),
-				"Type":  util.GetPropertyElement("Type", property),
-			})
-		}
-	}
-	appPropertiesByComponent = append(appPropertiesByComponent, appProperties)
+	appPropertiesByComponent = append(appPropertiesByComponent, extractProperties(sourceObj))
 
 	/* Adding logics and find a runner*/
 	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
@@ -175,54 +161,64 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		switch key {
 		case "logic":
 			logicArray := value.([]interface{})
-			for index, logic := range logicArray {
+			normalFlow := make([]interface{}, 0)
+			errorFlow := make([]interface{}, 0)
+
+			isEventFlow := true
+			for _, logic := range logicArray {
 				logicObj := logic.(map[string]interface{})
-				longname := logicObj["name"].(string)
-				category := longname[:strings.Index(longname, ".")]
-				name := longname[strings.Index(longname, ".")+1:]
-				logic := templateLibrary.GetComponent(index, category, name).(model.Logic)
+				category, _ := parseName(logicObj["name"].(string))
+
+				if "Error" == category {
+					isEventFlow = false
+				}
+
+				if isEventFlow {
+					normalFlow = append(normalFlow, logic)
+				} else {
+					errorFlow = append(errorFlow, logic)
+				}
+			}
+
+			logicSN := 0
+			for _, logic := range normalFlow {
+				logicObj := logic.(map[string]interface{})
+				category, name := parseName(logicObj["name"].(string))
+				logic := templateLibrary.GetComponent(logicSN, category, name).(model.Logic)
+				pipeline.AddNormalLogic(logic)
+				appPropertiesByComponent = append(appPropertiesByComponent, extractProperties(logicObj))
+
 				if nil != logic.GetRunner() {
 					runner = logic.GetRunner()
 				}
-				pipeline.AddLogic(logic)
 
 				/* Add notifier for the cmponent which generate notification. */
-				if "Rule.Default" == longname || "Rule.Expression" == longname || "Rule.TextMatching" == longname {
+				if nil != logic.GetNotificationBroker() {
 					/* Add Notifier */
-					notifier := templateLibrary.GetComponent(index, "Notifier", "Default").(model.Notifier)
-					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, index), notifier)
+					brokerCategory, brokerName := parseName(logic.GetNotificationBroker().(string))
+					notifier := templateLibrary.GetComponent(logicSN, brokerCategory, brokerName).(model.Notifier)
+					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, logicSN), notifier)
 				}
-
-				/* Extrace Daynamic Parameter From Logic */
-				appProperties = make([]interface{}, 0)
-				if nil != logicObj[iProperties] {
-					for _, property := range logicObj[iProperties].([]interface{}) {
-						appProperties = append(appProperties, map[string]interface{}{
-							"Name":  util.GetPropertyElement("Name", property),
-							"Value": util.GetPropertyElement("Value", property),
-							"Type":  util.GetPropertyElement("Type", property),
-						})
-					}
-				}
-				appPropertiesByComponent = append(appPropertiesByComponent, appProperties)
+				logicSN++
 			}
-			/* Dummy
-						 {
-			                "name": "Filter.Dummy",
-			                "properties": [
-			                    {
-			                        "Name": "Logging.LogLevel",
-			                        "Value": "DEBUG"
-			                    }
-			                ]
-			            }
-			*/
-			longname := "Filter.Dummy"
-			category := longname[:strings.Index(longname, ".")]
-			name := longname[strings.Index(longname, ".")+1:]
-			logic := templateLibrary.GetComponent(len(logicArray), category, name).(model.Logic)
-			pipeline.AddLogic(logic)
-			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("%s_%d", category, len(logicArray)))
+
+			pipeline.AddNormalLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy").(model.Logic))
+			logicSN++
+
+			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("Error_%d", logicSN))
+			if 0 != len(errorFlow) {
+				for _, logic := range errorFlow {
+					logicObj := logic.(map[string]interface{})
+					category, name := parseName(logicObj["name"].(string))
+					pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, category, name).(model.Logic))
+					appPropertiesByComponent = append(appPropertiesByComponent, extractProperties(logicObj))
+					logicSN++
+				}
+				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy").(model.Logic))
+			} else {
+				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Error", "Default").(model.Logic))
+			}
+
 			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
 
 			appPropertiesByComponent = append(appPropertiesByComponent,
@@ -269,7 +265,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
 	pipeline.SetListeners(notificationListeners)
 
-	descriptorString, _ := pipeline.Build()
+	descriptorString, _ := pipeline.Build2()
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
 
 	/*********************************
@@ -279,7 +275,10 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	propertyContainer := pipeline.GetProperties()
 	appProperties = applicationPipelineDescriptor["properties"].([]interface{})
 	exist := make(map[string]bool)
+	log.Info("[PipelineBuilderActivity2:Eval]  propertyContainer : ", propertyContainer)
+	log.Info("[PipelineBuilderActivity2:Eval]  appPropertiesByComponent : ", appPropertiesByComponent)
 	for _, property := range propertyContainer.GetReplacements(appPropertiesByComponent) {
+		log.Info("[PipelineBuilderActivity2:Eval]  property : ", property)
 		name := property.(map[string]interface{})["Name"].(string)
 		/* duplication fillter */
 		if !exist[name] {
@@ -340,6 +339,26 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	context.SetOutput(oRunner, runner)
 
 	return true, nil
+}
+
+func parseName(fullname string) (string, string) {
+	category := fullname[:strings.Index(fullname, ".")]
+	name := fullname[strings.Index(fullname, ".")+1:]
+	return category, name
+}
+
+func extractProperties(logicObj map[string]interface{}) []interface{} {
+	appProperties := make([]interface{}, 0)
+	if nil != logicObj[iProperties] {
+		for _, property := range logicObj[iProperties].([]interface{}) {
+			appProperties = append(appProperties, map[string]interface{}{
+				"Name":  util.GetPropertyElement("Name", property),
+				"Value": util.GetPropertyElement("Value", property),
+				"Type":  util.GetPropertyElement("Type", property),
+			})
+		}
+	}
+	return appProperties
 }
 
 func (a *PipelineBuilderActivity2) createDockerF1Properties(
