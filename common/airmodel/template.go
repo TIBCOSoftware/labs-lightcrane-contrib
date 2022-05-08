@@ -26,11 +26,13 @@ func (this *FlogoTemplateLibrary) GetPipeline() Pipeline {
 	return this.pipeline.Clone()
 }
 
-func (this *FlogoTemplateLibrary) GetComponent(sn int, category string, name string) PipelineComponent {
+func (this *FlogoTemplateLibrary) GetComponent(sn int, category string, name string, properties []interface{}) PipelineComponent {
 	if nil == this.components[category][name] {
 		return nil
 	}
-	return this.components[category][name].Clone(sn, name)
+	component := this.components[category][name].Clone(sn, name, properties)
+	component.SetRuntimeProperties(properties)
+	return component
 }
 
 func (this *FlogoTemplateLibrary) GetComponentDescriptor(category string, name string) interface{} {
@@ -163,7 +165,9 @@ func NewFlogoTemplateLibrary(folder string) (*FlogoTemplateLibrary, error) {
 type PipelineComponent interface {
 	GetData() map[string]interface{}
 	GetProperties() []interface{}
-	Clone(sn int, name string) PipelineComponent
+	GetRuntimeProperties() []interface{}
+	SetRuntimeProperties(runtimeProperties []interface{})
+	Clone(sn int, name string, runtimeProperties []interface{}) PipelineComponent
 }
 
 /* BasePipelineComponent BaseClass */

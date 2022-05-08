@@ -41,7 +41,7 @@ import (
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
-var log = logger.GetLogger("tibco-model-ops-pipelinebuilder2")
+var log = logger.GetLogger("tibco-lc-pipelinebuilder2")
 
 var initialized bool = false
 
@@ -125,7 +125,6 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 
 	var ports []interface{}
 	descriptor := make(map[string]interface{})
-	appPropertiesByComponent := make([]interface{}, 0)
 	var appProperties []interface{}
 
 	/* Create a new pipeline */
@@ -138,21 +137,20 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	log.Info("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
 
 	/* Add notifier for error handlers */
-	notifier := templateLibrary.GetComponent(0, "Notifier", "Default").(model.Notifier)
+	notifier := templateLibrary.GetComponent(0, "Notifier", "Default", nil).(model.Notifier)
 	pipeline.AddNotifier("ErrorHandler", notifier)
 
 	/* Adding data source */
 	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
 	category, name := parseName(sourceObj["name"].(string))
-	dataSource := templateLibrary.GetComponent(-1, category, name).(model.DataSource)
+	dataSource := templateLibrary.GetComponent(-1, category, name, extractProperties(sourceObj)).(model.DataSource)
+
 	pipeline.SetDataSource(dataSource)
 	/* If any server port defined */
 	if nil != sourceObj[iPorts] {
 		ports = sourceObj[iPorts].([]interface{})
 	}
-	/* Extrace Daynamic Parameter From DataSource */
-	appPropertiesByComponent = append(appPropertiesByComponent, extractProperties(sourceObj))
 
 	/* Adding logics and find a runner*/
 	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
@@ -184,9 +182,8 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			for _, logic := range normalFlow {
 				logicObj := logic.(map[string]interface{})
 				category, name := parseName(logicObj["name"].(string))
-				logic := templateLibrary.GetComponent(logicSN, category, name).(model.Logic)
+				logic := templateLibrary.GetComponent(logicSN, category, name, extractProperties(logicObj)).(model.Logic)
 				pipeline.AddNormalLogic(logic)
-				appPropertiesByComponent = append(appPropertiesByComponent, extractProperties(logicObj))
 
 				if nil != logic.GetRunner() {
 					runner = logic.GetRunner()
@@ -196,13 +193,13 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 				if nil != logic.GetNotificationBroker() {
 					/* Add Notifier */
 					brokerCategory, brokerName := parseName(logic.GetNotificationBroker().(string))
-					notifier := templateLibrary.GetComponent(logicSN, brokerCategory, brokerName).(model.Notifier)
+					notifier := templateLibrary.GetComponent(logicSN, brokerCategory, brokerName, nil).(model.Notifier)
 					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, logicSN), notifier)
 				}
 				logicSN++
 			}
 
-			pipeline.AddNormalLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy").(model.Logic))
+			pipeline.AddNormalLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
 			logicSN++
 
 			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("Error_%d", logicSN))
@@ -210,25 +207,15 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 				for _, logic := range errorFlow {
 					logicObj := logic.(map[string]interface{})
 					category, name := parseName(logicObj["name"].(string))
-					pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, category, name).(model.Logic))
-					appPropertiesByComponent = append(appPropertiesByComponent, extractProperties(logicObj))
+					pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, category, name, extractProperties(logicObj)).(model.Logic))
 					logicSN++
 				}
-				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy").(model.Logic))
+				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
 			} else {
-				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Error", "Default").(model.Logic))
+				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Error", "Default", []interface{}{}).(model.Logic))
 			}
 
 			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
-
-			appPropertiesByComponent = append(appPropertiesByComponent,
-				[]interface{}{
-					map[string]interface{}{
-						"Name":  "Logging.LogLevel",
-						"Value": "DEBUG",
-					},
-				},
-			)
 
 		case "extra":
 			if nil == value {
@@ -265,7 +252,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
 	pipeline.SetListeners(notificationListeners)
 
-	descriptorString, _ := pipeline.Build2()
+	descriptorString, _ := pipeline.Build()
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
 
 	/*********************************
@@ -275,9 +262,11 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	propertyContainer := pipeline.GetProperties()
 	appProperties = applicationPipelineDescriptor["properties"].([]interface{})
 	exist := make(map[string]bool)
-	log.Info("[PipelineBuilderActivity2:Eval]  propertyContainer : ", propertyContainer)
-	log.Info("[PipelineBuilderActivity2:Eval]  appPropertiesByComponent : ", appPropertiesByComponent)
-	for _, property := range propertyContainer.GetReplacements(appPropertiesByComponent) {
+	propertiesWithUniqueName, err := propertyContainer.GetReplacements()
+	if nil != err {
+		return false, err
+	}
+	for _, property := range propertiesWithUniqueName {
 		log.Info("[PipelineBuilderActivity2:Eval]  property : ", property)
 		name := property.(map[string]interface{})["Name"].(string)
 		/* duplication fillter */
@@ -348,9 +337,11 @@ func parseName(fullname string) (string, string) {
 }
 
 func extractProperties(logicObj map[string]interface{}) []interface{} {
+	log.Debug("[PipelineBuilderActivity2:extractProperties]  extractProperties : ", extractProperties)
 	appProperties := make([]interface{}, 0)
 	if nil != logicObj[iProperties] {
 		for _, property := range logicObj[iProperties].([]interface{}) {
+			log.Debug("[PipelineBuilderActivity2:extractProperties]  Name : ", util.GetPropertyElement("Name", property))
 			appProperties = append(appProperties, map[string]interface{}{
 				"Name":  util.GetPropertyElement("Name", property),
 				"Value": util.GetPropertyElement("Value", property),
