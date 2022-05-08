@@ -9,6 +9,7 @@ package airmodel
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -69,26 +70,43 @@ func (this *Contributes) Clone() Contributes {
 
 func NewProperties() Properties {
 	return Properties{
-		componentSequence: make([]interface{}, 0),
-		properties:        make([]interface{}, 0),
-		propertyMamingMap: make([]interface{}, 0),
+		appPropertiesByComponent: make([]interface{}, 0),
+		componentSequence:        make([]interface{}, 0),
+		properties:               make([]interface{}, 0),
+		propertyMamingMap:        make([]interface{}, 0),
 	}
 }
 
 type Properties struct {
-	componentSequence []interface{}
-	properties        []interface{}
-	propertyMamingMap []interface{}
+	appPropertiesByComponent []interface{}
+	componentSequence        []interface{}
+	properties               []interface{}
+	propertyMamingMap        []interface{}
 }
 
-func (this *Properties) Add(component string, properties []interface{}, propertyMamingMap []interface{}, newDefinedProperties []interface{}) {
+func (this *Properties) Add(
+	component string,
+	properties []interface{},
+	propertyMamingMap []interface{},
+	newDefinedProperties []interface{},
+	runtimeProperties []interface{}) {
+
+	log.Info("(Properties.Add) component : ", component)
+	log.Info("(Properties.Add) template properties : ", properties)
+	log.Info("(Properties.Add) raw properties : ", propertyMamingMap)
+	log.Info("(Properties.Add) runtime properties : ", newDefinedProperties)
+
+	this.appPropertiesByComponent = append(this.appPropertiesByComponent, runtimeProperties)
+
 	mamingMap := make(map[string]interface{})
 	componentName := fmt.Sprintf("%s_%s", component, "App.ComponentName")
+	log.Info("(Properties.Add) componentName : ", componentName)
 	foundName := false
 	for index, property := range properties {
 		this.properties = append(this.properties, property)
 		if componentName == property.(map[string]interface{})["name"] {
 			property.(map[string]interface{})["value"] = component
+			log.Info("(Properties.Add) App.ComponentName defined : ", componentName)
 			foundName = true
 		}
 		name := propertyMamingMap[index].(map[string]interface{})["name"].(string)
@@ -135,24 +153,28 @@ func (this *Properties) GetPropertyNameDef() map[string]interface{} {
 	return propertyNameDef
 }
 
-func (this *Properties) GetReplacements(appPropertiesByComponent []interface{}) []interface{} {
-	log.Debug("(Properties.GetReplacements) appPropertiesByComponent : ", appPropertiesByComponent)
+func (this *Properties) GetReplacements() ([]interface{}, error) {
+	log.Info("(Properties:GetReplacements)  appPropertiesByComponent : ", this.appPropertiesByComponent)
+	if len(this.propertyMamingMap) != len(this.appPropertiesByComponent) {
+		log.Error("(Properties.GetReplacements) len(propertyMamingMap) : ", len(this.propertyMamingMap), ", len(appPropertiesByComponent) : ", len(this.appPropertiesByComponent))
+		return nil, errors.New("Component size doesn't match which in the propertyMamingMap!!!")
+	}
 	appProperties := make([]interface{}, 0)
 	/* loop for component in processing order */
-	for index, componentProperties := range appPropertiesByComponent {
-		log.Debug("(Properties.GetReplacements) index : ", index)
+	for index, componentProperties := range this.appPropertiesByComponent {
+		log.Info("(Properties.GetReplacements) index : ", index)
 		for _, property := range componentProperties.([]interface{}) {
 			name := property.(map[string]interface{})["Name"].(string)
-			log.Debug("app property name: ", name)
+			log.Info("app property name: ", name)
 			if index < len(this.propertyMamingMap) && nil != this.propertyMamingMap[index].(map[string]interface{})[name] {
 				name = this.propertyMamingMap[index].(map[string]interface{})[name].(string)
-				log.Debug("app property name after: ", name)
+				log.Info("app property name after: ", name)
 				property.(map[string]interface{})["Name"] = this.propertyMamingMap[index].(map[string]interface{})[property.(map[string]interface{})["Name"].(string)]
 				appProperties = append(appProperties, property)
 			}
 		}
 	}
-	return appProperties
+	return appProperties, nil
 }
 
 func (this *Properties) Clone() Properties {

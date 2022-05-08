@@ -36,8 +36,17 @@ type DataSource struct {
 	name              string
 	data              map[string]interface{}
 	rawProperties     []interface{}
+	runtimeProperties []interface{}
 	defaultActivities []interface{}
 	subflowActivity   map[string]interface{}
+}
+
+func (this DataSource) GetRuntimeProperties() []interface{} {
+	return this.runtimeProperties
+}
+
+func (this DataSource) SetRuntimeProperties(runtimeProperties []interface{}) {
+	this.runtimeProperties = runtimeProperties
 }
 
 func (this DataSource) addNamespace4Properties(ID string) {
@@ -112,12 +121,13 @@ func (this DataSource) GetData() map[string]interface{} {
 	return this.data
 }
 
-func (this DataSource) Clone(sn int, name string) PipelineComponent {
+func (this DataSource) Clone(sn int, name string, runtimeProperties []interface{}) PipelineComponent {
 	return DataSource{
 		category:          this.category,
 		name:              name,
 		data:              util.DeepCopy(this.data).(map[string]interface{}),
 		rawProperties:     util.DeepCopy(this.rawProperties).([]interface{}),
+		runtimeProperties: runtimeProperties,
 		defaultActivities: util.DeepCopy(this.defaultActivities).([]interface{}),
 		subflowActivity:   util.DeepCopy(this.subflowActivity).(map[string]interface{}),
 	}
@@ -171,10 +181,19 @@ func NewNotifier(category string, datasource string) (Notifier, error) {
 }
 
 type Notifier struct {
-	category      string
-	name          string
-	data          map[string]interface{}
-	rawProperties []interface{}
+	category          string
+	name              string
+	data              map[string]interface{}
+	rawProperties     []interface{}
+	runtimeProperties []interface{}
+}
+
+func (this Notifier) GetRuntimeProperties() []interface{} {
+	return this.runtimeProperties
+}
+
+func (this Notifier) SetRuntimeProperties(runtimeProperties []interface{}) {
+	this.runtimeProperties = runtimeProperties
 }
 
 func (this Notifier) addNamespace4Properties(ID string) {
@@ -198,7 +217,7 @@ func (this Notifier) GetData() map[string]interface{} {
 	return this.data
 }
 
-func (this Notifier) Clone(sn int, name string) PipelineComponent {
+func (this Notifier) Clone(sn int, name string, runtimeProperties []interface{}) PipelineComponent {
 	return Notifier{
 		category:      this.category,
 		name:          name,
@@ -318,6 +337,7 @@ type Logic struct {
 	name              string
 	data              map[string]interface{}
 	rawProperties     []interface{}
+	runtimeProperties []interface{}
 	defaultActivities []interface{}
 	subflowActivities map[string]interface{}
 	metadata          map[string]interface{}
@@ -331,6 +351,14 @@ func (this Logic) GetID() string {
 
 func (this Logic) GetCategory() string {
 	return this.category
+}
+
+func (this Logic) GetRuntimeProperties() []interface{} {
+	return this.runtimeProperties
+}
+
+func (this Logic) SetRuntimeProperties(runtimeProperties []interface{}) {
+	this.runtimeProperties = runtimeProperties
 }
 
 func (this Logic) addNamespace4Properties(ID string) {
@@ -409,11 +437,12 @@ func (this Logic) GetData() map[string]interface{} {
 	return this.data
 }
 
-func (this Logic) Clone(sn int, name string) PipelineComponent {
+func (this Logic) Clone(sn int, name string, runtimeProperties []interface{}) PipelineComponent {
 	return Logic{
 		sn:                sn,
 		category:          this.category,
 		name:              name,
+		runtimeProperties: runtimeProperties,
 		data:              util.DeepCopy(this.data).(map[string]interface{}),
 		rawProperties:     util.DeepCopy(this.rawProperties).([]interface{}),
 		defaultActivities: util.DeepCopy(this.defaultActivities).([]interface{}),
