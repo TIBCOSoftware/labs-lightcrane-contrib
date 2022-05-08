@@ -134,14 +134,14 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	notificationListeners := map[string]interface{}{
 		"ErrorHandler": make([]interface{}, 0),
 	}
-	log.Info("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
+	log.Debug("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
 
 	/* Add notifier for error handlers */
 	notifier := templateLibrary.GetComponent(0, "Notifier", "Default", nil).(model.Notifier)
 	pipeline.AddNotifier("ErrorHandler", notifier)
 
 	/* Adding data source */
-	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
+	log.Debug("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
 	category, name := parseName(sourceObj["name"].(string))
 	dataSource := templateLibrary.GetComponent(-1, category, name, extractProperties(sourceObj)).(model.DataSource)
@@ -153,7 +153,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	}
 
 	/* Adding logics and find a runner*/
-	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
+	log.Debug("[PipelineBuilderActivity2:Eval] Adding logics ......")
 	var runner interface{}
 	for key, value := range applicationPipelineDescriptor {
 		switch key {
@@ -215,7 +215,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Error", "Default", []interface{}{}).(model.Logic))
 			}
 
-			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
+			log.Debug("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
 
 		case "extra":
 			if nil == value {
@@ -234,7 +234,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 					/* Get notification listeners from request */
 					var listeners map[string]interface{}
 					json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-					log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
+					log.Debug("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
 					/* Merge listeners */
 					for key, value := range listeners {
 						if nil == notificationListeners[key] {
@@ -249,7 +249,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			}
 		}
 	}
-	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
+	log.Debug("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
 	pipeline.SetListeners(notificationListeners)
 
 	descriptorString, _ := pipeline.Build()
@@ -267,7 +267,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		return false, err
 	}
 	for _, property := range propertiesWithUniqueName {
-		log.Info("[PipelineBuilderActivity2:Eval]  property : ", property)
+		log.Debug("[PipelineBuilderActivity2:Eval]  property : ", property)
 		name := property.(map[string]interface{})["Name"].(string)
 		/* duplication fillter */
 		if !exist[name] {
