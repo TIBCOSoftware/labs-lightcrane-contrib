@@ -94,7 +94,8 @@ func (this *Properties) Add(
 	log.Info("(Properties.Add) component : ", component)
 	log.Info("(Properties.Add) template properties : ", properties)
 	log.Info("(Properties.Add) raw properties : ", propertyMamingMap)
-	log.Info("(Properties.Add) runtime properties : ", newDefinedProperties)
+	log.Info("(Properties.Add) new defined properties : ", newDefinedProperties)
+	log.Info("(Properties.Add) runtime properties : ", runtimeProperties)
 
 	this.appPropertiesByComponent = append(this.appPropertiesByComponent, runtimeProperties)
 
@@ -127,6 +128,7 @@ func (this *Properties) Add(
 		})
 	}
 
+	/* Directly set to component's default properties */
 	if nil != newDefinedProperties {
 		for _, property := range newDefinedProperties {
 			this.properties = append(this.properties, property)
@@ -140,6 +142,7 @@ func (this *Properties) Add(
 func (this *Properties) GetProperties() []interface{} {
 	propertiesArray := make([]interface{}, 0)
 	for _, property := range this.properties {
+		log.Info("[Properties:GetProperties] Default property : ", property)
 		propertiesArray = append(propertiesArray, property)
 	}
 	return propertiesArray
