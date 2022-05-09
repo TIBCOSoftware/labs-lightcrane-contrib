@@ -267,7 +267,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		return false, err
 	}
 	for _, property := range propertiesWithUniqueName {
-		log.Debug("[PipelineBuilderActivity2:Eval]  property : ", property)
+		log.Debug("[PipelineBuilderActivity2:Eval] Dynamic property : ", property)
 		name := property.(map[string]interface{})["Name"].(string)
 		/* duplication fillter */
 		if !exist[name] {

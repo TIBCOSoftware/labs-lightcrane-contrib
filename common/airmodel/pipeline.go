@@ -160,7 +160,7 @@ func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
 				}
 			}
 		}
-		properties := []interface{}{
+		newDefinedDefaultProperties := []interface{}{
 			map[string]interface{}{
 				"name":  fmt.Sprintf("%s_App.IsListener", logic.GetID()),
 				"type":  "boolean",
@@ -173,7 +173,7 @@ func (this *Pipeline) buildFlow(flows []Logic) ([]interface{}, error) {
 			logic.GetID(),
 			logic.GetProperties(),
 			logic.GetRawProperties(),
-			properties,
+			newDefinedDefaultProperties,
 			logic.GetRuntimeProperties())
 		this.connections.Add(logic.GetConnections())
 		flogoFlows = append(flogoFlows, logic.GetResource())
