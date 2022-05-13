@@ -64,10 +64,10 @@ func (a *FileReaderActivity) Eval(context activity.Context) (done bool, err erro
 	results := make([]map[string]interface{}, 0)
 	content, err := readFile(filePattern)
 	if nil != err {
-		log.Error("(FileReaderActivity.Eval) err : ", err)
+		log.Warn("(FileReaderActivity.Eval) err : ", err)
 		matches, err := filepath.Glob(filePattern)
 		if nil != err {
-			log.Error("(FileReaderActivity.Eval) err : ", err)
+			log.Warn("(FileReaderActivity.Eval) err : ", err)
 			return false, err
 		}
 
@@ -76,7 +76,7 @@ func (a *FileReaderActivity) Eval(context activity.Context) (done bool, err erro
 		for _, filename := range matches {
 			content, err := readFile(filename)
 			if nil != err {
-				log.Error("(FileReaderActivity.Eval) err : ", err)
+				log.Warn("(FileReaderActivity.Eval) err : ", err)
 				continue
 			}
 			results = append(results, map[string]interface{}{"Filename": filename, "Content": content})
@@ -119,7 +119,6 @@ func readFile(filename string) (string, error) {
 	fileContent, err := ioutil.ReadFile(filename)
 	//log.Debug("(FileReaderActivity.readFile) fileContent = ", fileContent)
 	if err != nil {
-		log.Error("File reading error", err)
 		return "", err
 	}
 	return string(fileContent), nil
