@@ -265,13 +265,12 @@ func (a *HTTPClientActivity) delete(url string, header map[string]string, timeou
 func (a *HTTPClientActivity) post(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:post] request url = ", url)
 	log.Debug("[HTTPClientActivity:post] request header = ", header)
-	log.Debug("[HTTPClientActivity:post] request body as byte = ", data)
-	log.Debug("[HTTPClientActivity:post] request body as string = ", string(data))
+	log.Debug("[HTTPClientActivity:post] request body01 = ", data)
 	log.Debug("[HTTPClientActivity:post] request timeout = ", timeout.Milliseconds())
 	defer log.Debug("[HTTPClientActivity:post] exit ... ")
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(data))
-	//req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	//req, err := http.NewRequest("POST", url, bytes.NewReader(data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		log.Error("[HTTPClientActivity:post] Error reading request. ", err)
 		return nil, 500, err
@@ -308,15 +307,12 @@ func (a *HTTPClientActivity) post(url string, header map[string]string, timeout 
 
 func (a *HTTPClientActivity) put(url string, header map[string]string, timeout time.Duration, data []byte) ([]byte, int, error) {
 	log.Debug("[HTTPClientActivity:put] request url = ", url)
-	log.Debug("[HTTPClientActivity:put] request header = ", header)
-	log.Debug("[HTTPClientActivity:put] request body as byte = ", data)
-	log.Debug("[HTTPClientActivity:put] request body as string = ", string(data))
-	log.Debug("[HTTPClientActivity:put] request timeout = ", timeout.Milliseconds())
+	log.Debug("[HTTPClientActivity:put] request body = ", string(data))
 	defer log.Debug("[HTTPClientActivity:post] exit ... ")
 
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(data))
 	if err != nil {
-		log.Error("[HTTPClientActivity:put] Error reading request. ", err)
+		log.Error("[HTTPClientActivity:post] Error reading request. ", err)
 		return nil, 500, err
 	}
 
@@ -326,7 +322,7 @@ func (a *HTTPClientActivity) put(url string, header map[string]string, timeout t
 
 	client := &http.Client{Timeout: timeout}
 
-	log.Debug("[HTTPClientActivity:put] request header = ", req.Header)
+	log.Debug("[HTTPClientActivity:post] request header = ", req.Header)
 
 	// Send request
 	resp, err := client.Do(req)
