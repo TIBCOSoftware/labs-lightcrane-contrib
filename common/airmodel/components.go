@@ -320,10 +320,17 @@ func NewLogic(
 	//log.Debug(">>>>>>>>>> Logics >>>>>>>>>>>>> subflowActivities = ", subflowActivities)
 	/////////////////////////////////////////////////////////////////////
 
+	rawProperties := []interface{}{}
+	if nil == data["properties"] {
+		log.Warn("No properties defined in ", filename)
+	} else {
+		rawProperties = data["properties"].([]interface{})
+	}
+
 	return Logic{
 		category:          category,
 		data:              data,
-		rawProperties:     data["properties"].([]interface{}),
+		rawProperties:     rawProperties,
 		defaultActivities: defaultActivities,
 		subflowActivities: subflowActivities,
 		metadata:          metadata,
