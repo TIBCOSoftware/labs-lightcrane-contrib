@@ -97,6 +97,10 @@
  		{
 			"name": "Runner",
 			"type": "string"
+		},
+		{
+            "name": "Variables",
+            "type": "object"
 		}
 	]
 }
