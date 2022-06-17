@@ -64,6 +64,7 @@ const (
 	oDescriptor                    = "Descriptor"
 	oPropertyNameDef               = "PropertyNameDef"
 	oRunner                        = "Runner"
+	oVariable                      = "Variable"
 )
 
 type PipelineBuilderActivity2 struct {
@@ -322,10 +323,12 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	log.Debug("[PipelineBuilderActivity2:Eval]  Descriptor : ", descriptor)
 	log.Debug("[PipelineBuilderActivity2:Eval]  PropertyNameDef : ", propertyContainer.GetPropertyNameDef())
 	log.Debug("[PipelineBuilderActivity2:Eval]  Runner : ", runner)
+	log.Debug("[PipelineBuilderActivity2:Eval]  defVariable : ", defVariable)
 
 	context.SetOutput(oDescriptor, descriptor)
 	context.SetOutput(oPropertyNameDef, propertyContainer.GetPropertyNameDef())
 	context.SetOutput(oRunner, runner)
+	context.SetOutput(oVariable, defVariable)
 
 	return true, nil
 }
