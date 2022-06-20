@@ -9,10 +9,10 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/core/data"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 // activityLogger is the default logger for the Filter Activity
@@ -31,6 +31,8 @@ type JSONDeserializerActivity struct {
 
 // NewActivity creates a new AppActivity
 func NewActivity(metadata *activity.Metadata) activity.Activity {
+	logger.Debug("[JSONDeserializerActivity:NewActivity] entering ........ ")
+	defer logger.Debug("[JSONDeserializerActivity:NewActivity] exit ........ ")
 	aJSONDeserializerActivity := &JSONDeserializerActivity{
 		metadata: metadata,
 	}
@@ -39,6 +41,8 @@ func NewActivity(metadata *activity.Metadata) activity.Activity {
 
 // Metadata returns the activity's metadata
 func (a *JSONDeserializerActivity) Metadata() *activity.Metadata {
+	logger.Debug("[JSONDeserializerActivity:Metadata] entering ........ ")
+	defer logger.Debug("[JSONDeserializerActivity:Metadata] exit ........ ")
 	return a.metadata
 }
 
