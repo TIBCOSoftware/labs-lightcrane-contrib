@@ -31,7 +31,7 @@
 			}
 		}
 	],
-    "inputs": [
+    "input": [
 		{
 			"name": "Timeout",
 			"type": "int"
@@ -41,7 +41,7 @@
 			"type": "complex_object"
 		}
     ],
-	"outputs": [
+	"output": [
 		{
 			"name": "Reply",
 			"type": "complex_object"
