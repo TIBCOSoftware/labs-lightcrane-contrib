@@ -8,21 +8,15 @@ package pipecoupler
 import (
 	ctx "context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc"
 
-	"github.com/TIBCOSoftware/flogo-lib/core/activity"
-	"github.com/TIBCOSoftware/flogo-lib/core/data"
-	"github.com/TIBCOSoftware/flogo-lib/logger"
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
+	"github.com/project-flogo/core/activity"
+	"github.com/project-flogo/core/data/metadata"
 )
-
-var log = logger.GetLogger("tibco-pipecoupler")
-
-var initialized bool = false
 
 const (
 	DownstreamHost = "DownstreamHost"
@@ -32,47 +26,125 @@ const (
 	oReply         = "Reply"
 )
 
-type PipecouplerActivity struct {
-	metadata *activity.Metadata
-	//context         ctx.Context
-	activityToModel map[string]string
-	clients         map[string]PipeCouplerClient
-	mux             sync.Mutex
+type Settings struct {
+	DownstreamHost string `md:"DownstreamHost"`
+	Port           int    `md:"Port"`
 }
 
-func NewActivity(metadata *activity.Metadata) activity.Activity {
-	aCMLPipelineActivity := &PipecouplerActivity{
-		metadata:        metadata,
-		activityToModel: make(map[string]string),
-		clients:         make(map[string]PipeCouplerClient),
+type Input struct {
+	Timeout int                    `md:"Timeout"`
+	Data    map[string]interface{} `md:"Data"`
+}
+
+type Output struct {
+	Reply map[string]interface{} `md:"Reply"`
+}
+
+func (i *Input) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Timeout": i.Timeout,
+		"Data":    i.Data,
 	}
-
-	return aCMLPipelineActivity
 }
 
-func (a *PipecouplerActivity) Metadata() *activity.Metadata {
-	return a.metadata
-}
-
-func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err error) {
-
-	log.Debug("[PipecouplerActivity:Eval] entering ........ ")
-
-	client, err := a.getPipeline(context)
-
-	if nil != err {
-		return false, err
-	}
-
-	timeout, ok := context.GetInput(iTimeout).(int)
+func (i *Input) FromMap(values map[string]interface{}) error {
+	ok := true
+	i.Timeout, ok = values["Timeout"].(int)
 	if !ok {
+		return errors.New("Illegal Timeout type, expect int.")
+	}
+	i.Data, ok = values["Data"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal Data type, expect map[string]interface{}.")
+	}
+	return nil
+}
+
+func (o *Output) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Reply": o.Reply,
+	}
+}
+
+func (o *Output) FromMap(values map[string]interface{}) error {
+	ok := true
+	o.Reply, ok = values["Reply"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal Reply type, expect map[string]interface{}.")
+	}
+	return nil
+}
+
+var activityMd = activity.ToMetadata(&Settings{}, &Input{}, &Output{})
+
+func init() {
+	_ = activity.Register(&Activity{}, New)
+}
+
+type Activity struct {
+	activityToModel map[string]string
+	client          PipeCouplerClient
+}
+
+func New(ctx activity.InitContext) (activity.Activity, error) {
+	settings := &Settings{}
+	err := metadata.MapToStruct(ctx.Settings(), settings, true)
+	if err != nil {
+		return nil, err
+	}
+
+	downstreamHosts := settings.DownstreamHost
+	if "" == downstreamHosts {
+		return nil, activity.NewError("Server is not configured", "Pipecoupler-4002", nil)
+	}
+
+	port := settings.Port
+	if 0 > port {
+		return nil, activity.NewError("Server is not configured", "Pipecoupler-4002", nil)
+	}
+
+	var rootObject interface{}
+	err = json.Unmarshal([]byte(downstreamHosts), &rootObject)
+	if err != nil {
+		return nil, err
+	}
+	downstreamHost := rootObject.([]interface{})[0].(string)
+
+	address := fmt.Sprintf("%s:%d", downstreamHost, port)
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock()) //grpc.WithTimeout(time.Duration(5)*time.Second))
+	if err != nil {
+		return nil, err
+	}
+
+	activity := &Activity{
+		client: NewPipeCouplerClient(conn),
+	}
+
+	return activity, nil
+}
+
+func (a *Activity) Metadata() *activity.Metadata {
+	return activityMd
+}
+
+func (a *Activity) Eval(context activity.Context) (done bool, err error) {
+
+	log := context.Logger()
+	log.Debug("[Pipecoupler:Eval] entering ........ ")
+	defer log.Debug("[Pipecoupler:Eval] exit ........ ")
+
+	input := &Input{}
+	context.GetInputObject(input)
+
+	timeout := input.Timeout
+	if 0 > timeout {
 		timeout = 30
 	}
 	log.Debug("[PipecouplerActivity:Eval] timeout: ", timeout)
 
-	dataMap, ok := context.GetInput(iData).(*data.ComplexObject).Value.(map[string]interface{})
-	if !ok {
-		log.Warn("No data comes in ... ")
+	dataMap := input.Data
+	if nil == dataMap {
+		return false, errors.New("No data comes in ... ")
 	}
 	log.Debug("[PipecouplerActivity:Eval] Input data: ", dataMap)
 
@@ -89,11 +161,11 @@ func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err err
 		content = dataMap["Content"].(string)
 	}
 
-	//reqContext, cancel := ctx.WithDeadline(context.Background(), time.Now().Add(time.Duration(timeout)*time.Second))
+	//reqContext, cancel := ctx.WithDeadline(ctx.Background(), time.Now().Add(time.Duration(timeout)*time.Second))
 	reqContext, cancel := ctx.WithTimeout(ctx.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
-	replyObj, err := client.HandleData(
+	replyObj, err := a.client.HandleData(
 		reqContext,
 		&Data{
 			Sender:  sender,
@@ -102,7 +174,7 @@ func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err err
 		},
 	)
 	if err != nil {
-		log.Errorf("Error from down stream : %v", err)
+		return false, errors.New(fmt.Sprintf("Error from down stream : %v", err))
 	}
 
 	reply := map[string]interface{}{
@@ -112,62 +184,9 @@ func (a *PipecouplerActivity) Eval(context activity.Context) (done bool, err err
 		"Status":  replyObj.GetStatus(),
 	}
 
-	context.SetOutput(oReply, &data.ComplexObject{Metadata: "Reply", Value: reply})
+	context.SetOutput(oReply, reply)
 
 	log.Debug("Reply : ", reply)
 
-	log.Debug("[PipecouplerActivity:Eval] Exit ........ ")
-
 	return true, nil
-}
-
-func (a *PipecouplerActivity) getPipeline(context activity.Context) (PipeCouplerClient, error) {
-	log.Info("[PipecouplerActivity:getPipeline] entering ...... ")
-	myId := util.ActivityId(context)
-	client := a.clients[a.activityToModel[myId]]
-
-	if nil == client {
-		a.mux.Lock()
-		defer a.mux.Unlock()
-		client = a.clients[a.activityToModel[myId]]
-		if nil == client {
-
-			downstreamHosts, exist := context.GetSetting(DownstreamHost)
-			if !exist {
-				return nil, activity.NewError("Server is not configured", "Pipecoupler-4002", nil)
-			}
-
-			port, exist := context.GetSetting(Port)
-			if !exist {
-				return nil, activity.NewError("Server is not configured", "Pipecoupler-4002", nil)
-			}
-
-			log.Debug("[PipecouplerActivity:getPipeline] downstreamHost = ", downstreamHosts)
-			var rootObject interface{}
-			err := json.Unmarshal([]byte(downstreamHosts.(string)), &rootObject)
-			if err != nil {
-				return nil, err
-			}
-			downstreamHost := rootObject.([]interface{})[0].(string)
-
-			address := fmt.Sprintf("%s:%d", downstreamHost, port)
-			log.Info("[PipecouplerActivity:getPipeline] address = ", address)
-			conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock()) //grpc.WithTimeout(time.Duration(5)*time.Second))
-			if err != nil {
-				log.Errorf("[PipecouplerActivity:getPipeline] Unable to connect: %v", err)
-				//return nil, err
-			}
-
-			client = NewPipeCouplerClient(conn)
-			a.clients[a.activityToModel[myId]] = client
-
-		}
-	}
-	log.Info("[PipecouplerActivity:getPipeline] exit ...... ")
-
-	return client, nil
-}
-
-func (a *PipecouplerActivity) Close() {
-	//conn.Close()
 }
