@@ -158,6 +158,7 @@ func (this *Properties) GetPropertyNameDef() map[string]interface{} {
 
 func (this *Properties) GetReplacements() ([]interface{}, error) {
 	log.Info("(Properties:GetReplacements)  appPropertiesByComponent : ", this.appPropertiesByComponent)
+	log.Info("(Properties:GetReplacements)  propertyMamingMap : ", this.propertyMamingMap)
 	if len(this.propertyMamingMap) != len(this.appPropertiesByComponent) {
 		log.Error("(Properties.GetReplacements) len(propertyMamingMap) : ", len(this.propertyMamingMap), ", len(appPropertiesByComponent) : ", len(this.appPropertiesByComponent))
 		return nil, errors.New("Component size doesn't match which in the propertyMamingMap!!!")

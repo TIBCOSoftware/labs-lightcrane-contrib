@@ -424,6 +424,10 @@ func (a *PipelineBuilderActivity2) createK8sF1Properties(
 	groupProperties := make(map[string]interface{})
 	for _, property := range gProperties {
 		name := util.GetPropertyElementAsString("Name", property)
+		log.Debug("[PipelineBuilderActivity2:createK8sF1Properties] name : ", name)
+		if 0 > strings.Index(name, "_") {
+			return nil, errors.New("Unable to determine group name from property name!")
+		}
 		group := name[0:strings.Index(name, "_")]
 		if nil == groupProperties[group] {
 			groupProperties[group] = make([]interface{}, 0)
