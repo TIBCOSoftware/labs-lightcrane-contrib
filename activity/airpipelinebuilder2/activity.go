@@ -409,7 +409,7 @@ func (a *PipelineBuilderActivity2) createDockerF1Properties(
 		})
 		index++
 	}
-	log.Debug("[PipelineBuilderActivity2:createDockerF1Properties]  description2 : ", description)
+	log.Info("[PipelineBuilderActivity2:createDockerF1Properties] docker-compose description : ", description)
 	return description, nil
 }
 
@@ -424,17 +424,19 @@ func (a *PipelineBuilderActivity2) createK8sF1Properties(
 	groupProperties := make(map[string]interface{})
 	for _, property := range gProperties {
 		name := util.GetPropertyElementAsString("Name", property)
-		log.Debug("[PipelineBuilderActivity2:createK8sF1Properties] name : ", name)
-		if 0 > strings.Index(name, "_") {
-			return nil, errors.New("Unable to determine group name from property name!")
+		log.Info("[PipelineBuilderActivity2:createK8sF1Properties] name : ", name)
+		if 0 < strings.Index(name, "_") {
+			group := name[0:strings.Index(name, "_")]
+			log.Info("[PipelineBuilderActivity2:createK8sF1Properties] has group name : ", group)
+			if nil == groupProperties[group] {
+				groupProperties[group] = make([]interface{}, 0)
+			}
+			name = name[strings.Index(name, "_")+1 : len(name)]
+			property["Name"] = name
+			groupProperties[group] = append(groupProperties[group].([]interface{}), property)
+		} else {
+			log.Info("[PipelineBuilderActivity2:createK8sF1Properties] has group name! ")
 		}
-		group := name[0:strings.Index(name, "_")]
-		if nil == groupProperties[group] {
-			groupProperties[group] = make([]interface{}, 0)
-		}
-		name = name[strings.Index(name, "_")+1 : len(name)]
-		property["Name"] = name
-		groupProperties[group] = append(groupProperties[group].([]interface{}), property)
 	}
 	/*
 		{
@@ -550,6 +552,7 @@ func (a *PipelineBuilderActivity2) createK8sF1Properties(
 		}
 	}
 
+	log.Info("[PipelineBuilderActivity2:createK8sF1Properties] k8s description : ", description)
 	return description, nil
 }
 
