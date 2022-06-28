@@ -29,6 +29,7 @@ import (
 	"errors"
 
 	"fmt"
+	"strconv"
 	"strings"
 
 	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
@@ -289,6 +290,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	/* Adding logics and find a runner*/
 	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
 	var runner interface{}
+	replicas := 1
 	for key, value := range applicationPipelineDescriptor {
 		switch key {
 		case "logic":
@@ -379,6 +381,8 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 							}
 						}
 					}
+				} else if "App.Replicas" == name {
+					replicas = util.GetPropertyElement("Value", property).(int)
 				}
 			}
 		}
@@ -434,6 +438,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 			appProperties,
 			gProperties,
 			ports,
+			replicas,
 		)
 	default:
 		descriptor[oF1Properties], err = a.createDockerF1Properties(
@@ -444,6 +449,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 			appProperties,
 			gProperties,
 			ports,
+			replicas,
 		)
 	}
 
@@ -494,6 +500,7 @@ func (a *Activity) createDockerF1Properties(
 	appProperties []interface{},
 	gProperties []map[string]interface{},
 	ports []interface{},
+	replica int,
 ) (interface{}, error) {
 
 	description := make([]interface{}, 0)
@@ -553,7 +560,14 @@ func (a *Activity) createK8sF1Properties(
 	appProperties []interface{},
 	gProperties []map[string]interface{},
 	ports []interface{},
+	replicas int,
 ) (interface{}, error) {
+	if 1 < replicas {
+		gProperties = append(gProperties, map[string]interface{}{
+			"Name":  "main_spec.replicas",
+			"Value": strconv.Itoa(replicas),
+		})
+	}
 	groupProperties := make(map[string]interface{})
 	for _, property := range gProperties {
 		name := util.GetPropertyElementAsString("Name", property)
