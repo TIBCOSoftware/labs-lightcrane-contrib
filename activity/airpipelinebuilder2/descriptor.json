@@ -63,7 +63,7 @@
 			}
 		}
 	],
-    "inputs": [
+    "input": [
  		{
 			"name": "ApplicationName",
 			"type": "string"
@@ -85,7 +85,7 @@
             "type": "object"
 		}
     ],
-	"outputs": [
+	"output": [
  		{
 			"name": "Descriptor",
 			"type": "object"

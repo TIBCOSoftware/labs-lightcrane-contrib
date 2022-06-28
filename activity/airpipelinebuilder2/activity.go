@@ -30,95 +30,228 @@ import (
 
 	"fmt"
 	"strings"
-	"sync"
 
-	"github.com/TIBCOSoftware/flogo-lib/core/activity"
-	"github.com/TIBCOSoftware/flogo-lib/logger"
 	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
+	"github.com/project-flogo/core/activity"
+	"github.com/project-flogo/core/data/metadata"
+	"github.com/project-flogo/core/support/log"
 
-	//	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/objectbuilder"
 	model "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/airmodel"
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
-var log = logger.GetLogger("tibco-lc-pipelinebuilder2")
-
-var initialized bool = false
-
 const (
-	sTemplateFolder                = "TemplateFolder"
-	sLeftToken                     = "leftToken"
-	sRightToken                    = "rightToken"
-	sVariablesDef                  = "variablesDef"
-	sProperties                    = "Properties"
-	iApplicationName               = "ApplicationName"
-	iApplicationProperties         = "ApplicationProperties"
-	iApplicationPipelineDescriptor = "AirDescriptor"
-	iPorts                         = "ports"
-	iProperties                    = "properties"
-	iPropertyPrefix                = "PropertyPrefix"
-	iServiceType                   = "ServiceType"
-	iVariable                      = "Variables"
-	oFlogoApplicationDescriptor    = "FlogoDescriptor"
-	oF1Properties                  = "F1Properties"
-	oDescriptor                    = "Descriptor"
-	oPropertyNameDef               = "PropertyNameDef"
-	oRunner                        = "Runner"
-	oVariable                      = "Variables"
+	iApplicationProperties      = "ApplicationProperties"
+	iPorts                      = "ports"
+	iProperties                 = "properties"
+	iPropertyPrefix             = "PropertyPrefix"
+	iVariable                   = "Variables"
+	oFlogoApplicationDescriptor = "FlogoDescriptor"
+	oF1Properties               = "F1Properties"
+	oDescriptor                 = "Descriptor"
+	oPropertyNameDef            = "PropertyNameDef"
+	oRunner                     = "Runner"
+	oVariable                   = "Variables"
 )
 
-type PipelineBuilderActivity2 struct {
-	metadata    *activity.Metadata
-	mux         sync.Mutex
-	templates   map[string]*model.FlogoTemplateLibrary
-	pathMappers map[string]*kwr.KeywordMapper
-	variables   map[string]map[string]string
-	gProperties map[string][]map[string]interface{}
+type Settings struct {
+	TemplateFolder string `md:"TemplateFolder"`
+	LeftToken      string `md:"leftToken"`
+	RightToken     string `md:"rightToken"`
+	VariablesDef   string `md:"variablesDef"`
+	Properties     string `md:"Properties"`
 }
 
-func NewActivity(metadata *activity.Metadata) activity.Activity {
-	aPipelineBuilderActivity2 := &PipelineBuilderActivity2{
-		metadata:    metadata,
-		templates:   make(map[string]*model.FlogoTemplateLibrary),
-		pathMappers: make(map[string]*kwr.KeywordMapper),
-		variables:   make(map[string]map[string]string),
-		gProperties: make(map[string][]map[string]interface{}),
+type Input struct {
+	ApplicationName               string                 `md:"ApplicationName"`
+	ApplicationPipelineDescriptor map[string]interface{} `md:"AirDescriptor"`
+	ServiceType                   string                 `md:"ServiceType"`
+	PropertyPrefix                string                 `md:"PropertyPrefix"`
+	Variable                      map[string]interface{} `md:"Variables"`
+}
+
+type Output struct {
+	Descriptor      map[string]interface{} `md:"Descriptor"`
+	PropertyNameDef map[string]interface{} `md:"PropertyNameDef"`
+	Runner          string                 `md:"Runner"`
+	Variable        map[string]interface{} `md:"Variables"`
+}
+
+func (i *Input) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"ApplicationName": i.ApplicationName,
+		"AirDescriptor":   i.ApplicationPipelineDescriptor,
+		"ServiceType":     i.ServiceType,
+		"PropertyPrefix":  i.PropertyPrefix,
+		"Variable":        i.Variable,
 	}
-
-	return aPipelineBuilderActivity2
 }
 
-func (a *PipelineBuilderActivity2) Metadata() *activity.Metadata {
-	return a.metadata
-}
-
-func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, err error) {
-
-	log.Debug("[PipelineBuilderActivity2:Eval] entering ........ ")
-	defer log.Debug("[PipelineBuilderActivity2:Eval] Exit ........ ")
-
-	templateLibrary, gProperties, err := a.getTemplateLibrary(context)
-	if err != nil {
-		return false, err
-	}
-
-	applicationName, ok := context.GetInput(iApplicationName).(string)
+func (i *Input) FromMap(values map[string]interface{}) error {
+	ok := true
+	i.ApplicationName, ok = values["ApplicationName"].(string)
 	if !ok {
+		return errors.New("Illegal ApplicationName type, expect string.")
+	}
+	i.ApplicationPipelineDescriptor, ok = values["AirDescriptor"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal ApplicationPipelineDescriptor type, expect map[string]interface{}.")
+	}
+	i.ServiceType, ok = values["ServiceType"].(string)
+	if !ok {
+		return errors.New("Illegal ServiceType type, expect string.")
+	}
+	i.PropertyPrefix, ok = values["PropertyPrefix"].(string)
+	if !ok {
+		return errors.New("Illegal PropertyPrefix type, expect string.")
+	}
+	i.Variable, ok = values["Variable"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal Variable type, expect map[string]interface{}.")
+	}
+	return nil
+}
+
+func (o *Output) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Descriptor":      o.Descriptor,
+		"PropertyNameDef": o.PropertyNameDef,
+		"Runner":          o.Runner,
+		"Variable":        o.Variable,
+	}
+}
+
+func (o *Output) FromMap(values map[string]interface{}) error {
+	ok := true
+	o.Descriptor, ok = values["Descriptor"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal Descriptor type, expect map[string]interface{}.")
+	}
+	o.PropertyNameDef, ok = values["PropertyNameDef"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal PropertyNameDef type, expect map[string]interface{}.")
+	}
+	o.Runner, ok = values["Runner"].(string)
+	if !ok {
+		return errors.New("Illegal Runner type, expect string.")
+	}
+	o.Variable, ok = values["Variable"].(map[string]interface{})
+	if !ok {
+		return errors.New("Illegal Variable type, expect map[string]interface{}.")
+	}
+	return nil
+}
+
+var activityMd = activity.ToMetadata(&Settings{}, &Input{}, &Output{})
+
+func init() {
+	_ = activity.Register(&Activity{}, New)
+}
+
+type Activity struct {
+	template    *model.FlogoTemplateLibrary
+	pathMapper  *kwr.KeywordMapper
+	variables   map[string]string
+	gProperties []map[string]interface{}
+}
+
+func New(ctx activity.InitContext) (activity.Activity, error) {
+	settings := &Settings{}
+	err := metadata.MapToStruct(ctx.Settings(), settings, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build templates
+	templateFolder := settings.TemplateFolder
+	if "" == templateFolder {
+		return nil, activity.NewError("Template is not configured", "PipelineBuilder-4002", nil)
+	}
+	templateLib, err := model.NewFlogoTemplateLibrary(templateFolder)
+	if nil != err {
+		return nil, err
+	}
+
+	// Build group properties
+	gProperties := make([]map[string]interface{}, 0)
+	if "" != settings.Properties {
+		var gPropertiesSetting []interface{}
+		err := json.Unmarshal([]byte(settings.Properties), &gPropertiesSetting)
+		if nil == err {
+			for _, gProperty := range gPropertiesSetting {
+				gProperties = append(gProperties, gProperty.(map[string]interface{}))
+			}
+		}
+	}
+
+	// Build variables
+	variables := make(map[string]string)
+	if "" != settings.VariablesDef {
+		var variablesDef []interface{}
+		err := json.Unmarshal([]byte(settings.VariablesDef), &variablesDef)
+		if nil == err && nil != variablesDef {
+			for _, variableDef := range variablesDef {
+				variableInfo := variableDef.(map[string]interface{})
+				variables[variableInfo["Name"].(string)] = variableInfo["Type"].(string)
+			}
+		}
+	}
+	// Build pathMapper
+	lefttoken := settings.LeftToken
+	if "" == lefttoken {
+		return nil, errors.New("LeftToken not defined!")
+	}
+	righttoken := settings.RightToken
+	if "" == righttoken {
+		return nil, errors.New("RightToken not defined!")
+	}
+	mapper := kwr.NewKeywordMapper("", lefttoken, righttoken)
+
+	activity := &Activity{
+		template:    templateLib,
+		pathMapper:  mapper,
+		variables:   variables,
+		gProperties: gProperties,
+	}
+
+	return activity, nil
+}
+
+func (a *Activity) Metadata() *activity.Metadata {
+	return activityMd
+}
+
+func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
+
+	log := ctx.Logger()
+	log.Info("[PipelineBuilderActivity2:Eval] entering ........ ")
+	defer log.Info("[PipelineBuilderActivity2:Eval] Exit ........ ")
+
+	input := &Input{}
+	ctx.GetInputObject(input)
+
+	gProperties := make([]map[string]interface{}, len(a.gProperties))
+	for index, gProperty := range a.gProperties {
+		gProperties[index] = gProperty
+	}
+
+	applicationName := input.ApplicationName
+	if "" == applicationName {
 		return false, errors.New("Invalid Application Name ... ")
 	}
-	log.Debug("[PipelineBuilderActivity2:Eval]  Name : ", applicationName)
+	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", applicationName)
 
-	serviceType, ok := context.GetInput(iServiceType).(string)
-	if !ok {
+	serviceType := input.ServiceType
+	if "" == serviceType {
 		return false, errors.New("Invalid Service Type ... ")
 	}
-	log.Debug("[PipelineBuilderActivity2:Eval]  Name : ", serviceType)
+	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", serviceType)
 
-	applicationPipelineDescriptor, ok := context.GetInput(iApplicationPipelineDescriptor).(map[string]interface{})
-	if !ok {
+	applicationPipelineDescriptor := input.ApplicationPipelineDescriptor
+	if nil == applicationPipelineDescriptor {
 		return false, errors.New("Invalid Application Pipeline Descriptor ... ")
 	}
-	log.Debug("[PipelineBuilderActivity2:Eval]  Pipeline Descriptor : ", applicationPipelineDescriptor)
+	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Descriptor : ", applicationPipelineDescriptor)
 
 	/*********************************
 	        Construct Pipeline
@@ -129,23 +262,23 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	var appProperties []interface{}
 
 	/* Create a new pipeline */
-	pipeline := templateLibrary.GetPipeline()
+	pipeline := a.template.GetPipeline()
 
 	/* Declare notification listener */
 	notificationListeners := map[string]interface{}{
 		"ErrorHandler": make([]interface{}, 0),
 	}
-	log.Debug("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
+	log.Info("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
 
 	/* Add notifier for error handlers */
-	notifier := templateLibrary.GetComponent(0, "Notifier", "Default", nil).(model.Notifier)
+	notifier := a.template.GetComponent(0, "Notifier", "Default", nil).(model.Notifier)
 	pipeline.AddNotifier("ErrorHandler", notifier)
 
 	/* Adding data source */
-	log.Debug("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
+	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
 	category, name := parseName(sourceObj["name"].(string))
-	dataSource := templateLibrary.GetComponent(-1, category, name, extractProperties(sourceObj)).(model.DataSource)
+	dataSource := a.template.GetComponent(-1, category, name, extractProperties(log, sourceObj)).(model.DataSource)
 
 	pipeline.SetDataSource(dataSource)
 	/* If any server port defined */
@@ -154,7 +287,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 	}
 
 	/* Adding logics and find a runner*/
-	log.Debug("[PipelineBuilderActivity2:Eval] Adding logics ......")
+	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
 	var runner interface{}
 	for key, value := range applicationPipelineDescriptor {
 		switch key {
@@ -183,7 +316,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			for _, logic := range normalFlow {
 				logicObj := logic.(map[string]interface{})
 				category, name := parseName(logicObj["name"].(string))
-				logic := templateLibrary.GetComponent(logicSN, category, name, extractProperties(logicObj)).(model.Logic)
+				logic := a.template.GetComponent(logicSN, category, name, extractProperties(log, logicObj)).(model.Logic)
 				pipeline.AddNormalLogic(logic)
 
 				if nil != logic.GetRunner() {
@@ -194,13 +327,13 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 				if nil != logic.GetNotificationBroker() {
 					/* Add Notifier */
 					brokerCategory, brokerName := parseName(logic.GetNotificationBroker().(string))
-					notifier := templateLibrary.GetComponent(logicSN, brokerCategory, brokerName, nil).(model.Notifier)
+					notifier := a.template.GetComponent(logicSN, brokerCategory, brokerName, nil).(model.Notifier)
 					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, logicSN), notifier)
 				}
 				logicSN++
 			}
 
-			pipeline.AddNormalLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
+			pipeline.AddNormalLogic(a.template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
 			logicSN++
 
 			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("Error_%d", logicSN))
@@ -208,15 +341,15 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 				for _, logic := range errorFlow {
 					logicObj := logic.(map[string]interface{})
 					category, name := parseName(logicObj["name"].(string))
-					pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, category, name, extractProperties(logicObj)).(model.Logic))
+					pipeline.AddErrorLogic(a.template.GetComponent(logicSN, category, name, extractProperties(log, logicObj)).(model.Logic))
 					logicSN++
 				}
-				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
+				pipeline.AddErrorLogic(a.template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
 			} else {
-				pipeline.AddErrorLogic(templateLibrary.GetComponent(logicSN, "Error", "Default", []interface{}{}).(model.Logic))
+				pipeline.AddErrorLogic(a.template.GetComponent(logicSN, "Error", "Default", []interface{}{}).(model.Logic))
 			}
 
-			log.Debug("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
+			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
 
 		case "extra":
 			if nil == value {
@@ -235,7 +368,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 					/* Get notification listeners from request */
 					var listeners map[string]interface{}
 					json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-					log.Debug("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
+					log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
 					/* Merge listeners */
 					for key, value := range listeners {
 						if nil == notificationListeners[key] {
@@ -250,7 +383,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 			}
 		}
 	}
-	log.Debug("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
+	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
 	pipeline.SetListeners(notificationListeners)
 
 	descriptorString, _ := pipeline.Build()
@@ -268,7 +401,7 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		return false, err
 	}
 	for _, property := range propertiesWithUniqueName {
-		log.Debug("[PipelineBuilderActivity2:Eval] Dynamic property : ", property)
+		log.Info("[PipelineBuilderActivity2:Eval] Dynamic property : ", property)
 		name := property.(map[string]interface{})["Name"].(string)
 		/* duplication fillter */
 		if !exist[name] {
@@ -280,25 +413,22 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		name := property.(map[string]interface{})["Name"].(string)
 		property.(map[string]interface{})["Name"] = strings.ReplaceAll(name, ".", "_")
 	}
-	pathMapper, _, _ := a.getVariableMapper(context)
-	defVariable := context.GetInput(iVariable).(map[string]interface{})
-	propertyPrefix, ok := context.GetInput(iPropertyPrefix).(string)
-	if !ok {
-		propertyPrefix = ""
-	} else {
-		propertyPrefix = pathMapper.Replace(propertyPrefix, defVariable)
-	}
-	log.Debug("[PipelineBuilderActivity2:Eval]  pathMapper : ", pathMapper)
-	log.Debug("[PipelineBuilderActivity2:Eval]  defVariable : ", defVariable)
-	log.Debug("[PipelineBuilderActivity2:Eval]  propertyPrefix : ", propertyPrefix)
-	log.Debug("[PipelineBuilderActivity2:Eval]  appProperties : ", appProperties)
-	log.Debug("[PipelineBuilderActivity2:Eval]  gProperties : ", gProperties)
-	log.Debug("[PipelineBuilderActivity2:Eval]  ports : ", ports)
+
+	defVariable := input.Variable
+	propertyPrefix := a.pathMapper.Replace(input.PropertyPrefix, defVariable)
+
+	log.Info("[PipelineBuilderActivity2:Eval]  pathMapper : ", a.pathMapper)
+	log.Info("[PipelineBuilderActivity2:Eval]  defVariable : ", defVariable)
+	log.Info("[PipelineBuilderActivity2:Eval]  propertyPrefix : ", propertyPrefix)
+	log.Info("[PipelineBuilderActivity2:Eval]  appProperties : ", appProperties)
+	log.Info("[PipelineBuilderActivity2:Eval]  gProperties : ", gProperties)
+	log.Info("[PipelineBuilderActivity2:Eval]  ports : ", ports)
 
 	switch serviceType {
 	case "k8s":
 		descriptor[oF1Properties], err = a.createK8sF1Properties(
-			pathMapper,
+			log,
+			a.pathMapper,
 			defVariable,
 			propertyPrefix,
 			appProperties,
@@ -307,7 +437,8 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		)
 	default:
 		descriptor[oF1Properties], err = a.createDockerF1Properties(
-			pathMapper,
+			log,
+			a.pathMapper,
 			defVariable,
 			propertyPrefix,
 			appProperties,
@@ -320,15 +451,15 @@ func (a *PipelineBuilderActivity2) Eval(context activity.Context) (done bool, er
 		return true, err
 	}
 
-	log.Debug("[PipelineBuilderActivity2:Eval]  Descriptor : ", descriptor)
-	log.Debug("[PipelineBuilderActivity2:Eval]  PropertyNameDef : ", propertyContainer.GetPropertyNameDef())
-	log.Debug("[PipelineBuilderActivity2:Eval]  Runner : ", runner)
-	log.Debug("[PipelineBuilderActivity2:Eval]  Variables : ", defVariable)
+	log.Info("[PipelineBuilderActivity2:Eval]  Descriptor : ", descriptor)
+	log.Info("[PipelineBuilderActivity2:Eval]  PropertyNameDef : ", propertyContainer.GetPropertyNameDef())
+	log.Info("[PipelineBuilderActivity2:Eval]  Runner : ", runner)
+	log.Info("[PipelineBuilderActivity2:Eval]  Variables : ", defVariable)
 
-	context.SetOutput(oDescriptor, descriptor)
-	context.SetOutput(oPropertyNameDef, propertyContainer.GetPropertyNameDef())
-	context.SetOutput(oRunner, runner)
-	context.SetOutput(oVariable, defVariable)
+	ctx.SetOutput(oDescriptor, descriptor)
+	ctx.SetOutput(oPropertyNameDef, propertyContainer.GetPropertyNameDef())
+	ctx.SetOutput(oRunner, runner)
+	ctx.SetOutput(oVariable, defVariable)
 
 	return true, nil
 }
@@ -339,12 +470,12 @@ func parseName(fullname string) (string, string) {
 	return category, name
 }
 
-func extractProperties(logicObj map[string]interface{}) []interface{} {
-	log.Debug("[PipelineBuilderActivity2:extractProperties]  extractProperties : ", extractProperties)
+func extractProperties(log log.Logger, logicObj map[string]interface{}) []interface{} {
+	log.Info("[PipelineBuilderActivity2:extractProperties]  logicObj : ", logicObj)
 	appProperties := make([]interface{}, 0)
 	if nil != logicObj[iProperties] {
 		for _, property := range logicObj[iProperties].([]interface{}) {
-			log.Debug("[PipelineBuilderActivity2:extractProperties]  Name : ", util.GetPropertyElement("Name", property))
+			log.Info("[PipelineBuilderActivity2:extractProperties]  Name : ", util.GetPropertyElement("Name", property))
 			appProperties = append(appProperties, map[string]interface{}{
 				"Name":  util.GetPropertyElement("Name", property),
 				"Value": util.GetPropertyElement("Value", property),
@@ -355,7 +486,8 @@ func extractProperties(logicObj map[string]interface{}) []interface{} {
 	return appProperties
 }
 
-func (a *PipelineBuilderActivity2) createDockerF1Properties(
+func (a *Activity) createDockerF1Properties(
+	log log.Logger,
 	pathMapper *kwr.KeywordMapper,
 	defVariable map[string]interface{},
 	propertyPrefix string,
@@ -370,10 +502,10 @@ func (a *PipelineBuilderActivity2) createDockerF1Properties(
 		"Value": make([]interface{}, 0),
 	}
 	description = append(description, mainDescription)
-	log.Debug("[PipelineBuilderActivity2:createDockerF1Properties]  description1 : ", description)
+	log.Info("[PipelineBuilderActivity2:createDockerF1Properties]  description1 : ", description)
 
 	for _, property := range gProperties {
-		log.Debug("[PipelineBuilderActivity2:createDockerF1Properties]  property : ", property)
+		log.Info("[PipelineBuilderActivity2:createDockerF1Properties]  property : ", property)
 		/* nil will not be accepted */
 		value, dtype, err := util.GetPropertyValue(property["Value"], property["Type"])
 		if nil != err {
@@ -409,11 +541,12 @@ func (a *PipelineBuilderActivity2) createDockerF1Properties(
 		})
 		index++
 	}
-	log.Debug("[PipelineBuilderActivity2:createDockerF1Properties]  description2 : ", description)
+	log.Info("[PipelineBuilderActivity2:createDockerF1Properties] docker-compose description : ", description)
 	return description, nil
 }
 
-func (a *PipelineBuilderActivity2) createK8sF1Properties(
+func (a *Activity) createK8sF1Properties(
+	log log.Logger,
 	pathMapper *kwr.KeywordMapper,
 	defVariable map[string]interface{},
 	propertyPrefix string,
@@ -424,17 +557,19 @@ func (a *PipelineBuilderActivity2) createK8sF1Properties(
 	groupProperties := make(map[string]interface{})
 	for _, property := range gProperties {
 		name := util.GetPropertyElementAsString("Name", property)
-		log.Debug("[PipelineBuilderActivity2:createK8sF1Properties] name : ", name)
-		if 0 > strings.Index(name, "_") {
-			return nil, errors.New("Unable to determine group name from property name!")
+		log.Info("[PipelineBuilderActivity2:createK8sF1Properties] name : ", name)
+		if 0 < strings.Index(name, "_") {
+			group := name[0:strings.Index(name, "_")]
+			log.Info("[PipelineBuilderActivity2:createK8sF1Properties] has group name : ", group)
+			if nil == groupProperties[group] {
+				groupProperties[group] = make([]interface{}, 0)
+			}
+			name = name[strings.Index(name, "_")+1 : len(name)]
+			property["Name"] = name
+			groupProperties[group] = append(groupProperties[group].([]interface{}), property)
+		} else {
+			log.Info("[PipelineBuilderActivity2:createK8sF1Properties] has group name! ")
 		}
-		group := name[0:strings.Index(name, "_")]
-		if nil == groupProperties[group] {
-			groupProperties[group] = make([]interface{}, 0)
-		}
-		name = name[strings.Index(name, "_")+1 : len(name)]
-		property["Name"] = name
-		groupProperties[group] = append(groupProperties[group].([]interface{}), property)
 	}
 	/*
 		{
@@ -550,82 +685,6 @@ func (a *PipelineBuilderActivity2) createK8sF1Properties(
 		}
 	}
 
+	log.Info("[PipelineBuilderActivity2:createK8sF1Properties] k8s description : ", description)
 	return description, nil
-}
-
-func (a *PipelineBuilderActivity2) getTemplateLibrary(ctx activity.Context) (*model.FlogoTemplateLibrary, []map[string]interface{}, error) {
-
-	log.Debug("[PipelineBuilderActivity2:getTemplate] entering ........ ")
-	defer log.Debug("[PipelineBuilderActivity2:getTemplate] exit ........ ")
-
-	myId := util.ActivityId(ctx)
-	templateLib := a.templates[myId]
-	gProperties := a.gProperties[myId]
-
-	if nil == templateLib {
-		a.mux.Lock()
-		defer a.mux.Unlock()
-		templateLib = a.templates[myId]
-		gProperties = a.gProperties[myId]
-		if nil == templateLib {
-			templateFolderSetting, exist := ctx.GetSetting(sTemplateFolder)
-			if !exist {
-				return nil, nil, activity.NewError("Template is not configured", "PipelineBuilder-4002", nil)
-			}
-			templateFolder := templateFolderSetting.(string)
-			var err error
-			templateLib, err = model.NewFlogoTemplateLibrary(templateFolder)
-			if nil != err {
-				return nil, nil, err
-			}
-
-			a.templates[myId] = templateLib
-			gPropertiesSetting, exist := ctx.GetSetting(sProperties)
-			gProperties = make([]map[string]interface{}, 0)
-			if exist {
-				for _, gProperty := range gPropertiesSetting.([]interface{}) {
-					gProperties = append(gProperties, gProperty.(map[string]interface{}))
-				}
-			}
-			a.gProperties[myId] = gProperties
-		}
-	}
-	return templateLib, gProperties, nil
-}
-
-func (a *PipelineBuilderActivity2) getVariableMapper(ctx activity.Context) (*kwr.KeywordMapper, map[string]string, error) {
-	myId := util.ActivityId(ctx)
-	mapper := a.pathMappers[myId]
-	variables := a.variables[myId]
-
-	if nil == mapper {
-		a.mux.Lock()
-		defer a.mux.Unlock()
-		mapper = a.pathMappers[myId]
-		if nil == mapper {
-			variables = make(map[string]string)
-			variablesDef, ok := ctx.GetSetting(sVariablesDef)
-			log.Debug("Processing handlers : variablesDef = ", variablesDef)
-			if ok && nil != variablesDef {
-				for _, variableDef := range variablesDef.([]interface{}) {
-					variableInfo := variableDef.(map[string]interface{})
-					variables[variableInfo["Name"].(string)] = variableInfo["Type"].(string)
-				}
-			}
-
-			lefttoken, exist := ctx.GetSetting(sLeftToken)
-			if !exist {
-				return nil, nil, errors.New("LeftToken not defined!")
-			}
-			righttoken, exist := ctx.GetSetting(sRightToken)
-			if !exist {
-				return nil, nil, errors.New("RightToken not defined!")
-			}
-			mapper = kwr.NewKeywordMapper("", lefttoken.(string), righttoken.(string))
-
-			a.pathMappers[myId] = mapper
-			a.variables[myId] = variables
-		}
-	}
-	return mapper, variables, nil
 }
