@@ -5,9 +5,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/TIBCOSoftware/flogo-contrib/action/flow/test"
-	"github.com/TIBCOSoftware/flogo-lib/core/activity"
-	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/project-flogo/core/activity"
+	"github.com/project-flogo/core/support/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +42,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestEval(t *testing.T) {
-	log.SetLogLevel(logger.DebugLevel)
+	//log.SetLogLevel(logger.DebugLevel)
 	//log.SetLogLevel(logger.InfoLevel)
 
 	act := NewActivity(getActivityMetadata())
