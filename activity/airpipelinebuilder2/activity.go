@@ -382,7 +382,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 						}
 					}
 				} else if "App.Replicas" == name {
-					replicas = util.GetPropertyElement("Value", property).(int)
+					replicas = int(util.GetPropertyElement("Value", property).(float64))
 				}
 			}
 		}
