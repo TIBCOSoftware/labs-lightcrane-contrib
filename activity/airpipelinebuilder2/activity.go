@@ -427,6 +427,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	log.Info("[PipelineBuilderActivity2:Eval]  appProperties : ", appProperties)
 	log.Info("[PipelineBuilderActivity2:Eval]  gProperties : ", gProperties)
 	log.Info("[PipelineBuilderActivity2:Eval]  ports : ", ports)
+	log.Info("[PipelineBuilderActivity2:Eval]  replicas : ", replicas)
 
 	switch serviceType {
 	case "k8s":
@@ -562,12 +563,6 @@ func (a *Activity) createK8sF1Properties(
 	ports []interface{},
 	replicas int,
 ) (interface{}, error) {
-	if 1 < replicas {
-		gProperties = append(gProperties, map[string]interface{}{
-			"Name":  "main_spec.replicas",
-			"Value": strconv.Itoa(replicas),
-		})
-	}
 	groupProperties := make(map[string]interface{})
 	for _, property := range gProperties {
 		name := util.GetPropertyElementAsString("Name", property)
@@ -611,6 +606,16 @@ func (a *Activity) createK8sF1Properties(
 	}
 	description = append(description, mainDescription)
 
+	// Add replicas
+	if 1 < replicas {
+		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
+			"Name":  "spec.replicas",
+			"Value": strconv.Itoa(replicas),
+			"Type":  "string",
+		})
+	}
+
+	// Add preconfigured properties
 	for _, iProperty := range groupProperties["main"].([]interface{}) {
 		property := iProperty.(map[string]interface{})
 		value, dtype, err := util.GetPropertyValue(property["Value"], property["Type"])
@@ -626,6 +631,8 @@ func (a *Activity) createK8sF1Properties(
 			"Type":  util.GetPropertyElement("Type", property),
 		})
 	}
+
+	// Add pipeline parameters
 	for index, property := range appProperties {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
 			"Name":  pathMapper.Replace(fmt.Sprintf("%s.env[%d].name", propertyPrefix, index), defVariable),
