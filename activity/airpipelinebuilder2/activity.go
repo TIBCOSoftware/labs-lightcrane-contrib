@@ -41,11 +41,8 @@ import (
 )
 
 const (
-	iApplicationProperties      = "ApplicationProperties"
 	iPorts                      = "ports"
 	iProperties                 = "properties"
-	iPropertyPrefix             = "PropertyPrefix"
-	iVariable                   = "Variables"
 	oFlogoApplicationDescriptor = "FlogoDescriptor"
 	oF1Properties               = "F1Properties"
 	oDescriptor                 = "Descriptor"
@@ -83,7 +80,7 @@ func (i *Input) ToMap() map[string]interface{} {
 		"AirDescriptor":   i.ApplicationPipelineDescriptor,
 		"ServiceType":     i.ServiceType,
 		"PropertyPrefix":  i.PropertyPrefix,
-		"Variable":        i.Variable,
+		"Variables":       i.Variable,
 	}
 }
 
@@ -105,7 +102,7 @@ func (i *Input) FromMap(values map[string]interface{}) error {
 	if !ok {
 		return errors.New("Illegal PropertyPrefix type, expect string.")
 	}
-	i.Variable, ok = values["Variable"].(map[string]interface{})
+	i.Variable, ok = values["Variables"].(map[string]interface{})
 	if !ok {
 		return errors.New("Illegal Variable type, expect map[string]interface{}.")
 	}
@@ -117,7 +114,7 @@ func (o *Output) ToMap() map[string]interface{} {
 		"Descriptor":      o.Descriptor,
 		"PropertyNameDef": o.PropertyNameDef,
 		"Runner":          o.Runner,
-		"Variable":        o.Variable,
+		"Variables":       o.Variable,
 	}
 }
 
@@ -135,7 +132,7 @@ func (o *Output) FromMap(values map[string]interface{}) error {
 	if !ok {
 		return errors.New("Illegal Runner type, expect string.")
 	}
-	o.Variable, ok = values["Variable"].(map[string]interface{})
+	o.Variable, ok = values["Variables"].(map[string]interface{})
 	if !ok {
 		return errors.New("Illegal Variable type, expect map[string]interface{}.")
 	}
@@ -249,6 +246,9 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		return false, errors.New("Invalid Application Pipeline Descriptor ... ")
 	}
 	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Descriptor : ", applicationPipelineDescriptor)
+
+	variable := input.Variable
+	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Variable : ", variable)
 
 	/*********************************
 	        Construct Pipeline
@@ -414,11 +414,10 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		property.(map[string]interface{})["Name"] = strings.ReplaceAll(name, ".", "_")
 	}
 
-	defVariable := input.Variable
-	propertyPrefix := a.pathMapper.Replace(input.PropertyPrefix, defVariable)
+	propertyPrefix := a.pathMapper.Replace(input.PropertyPrefix, variable)
 
 	log.Info("[PipelineBuilderActivity2:Eval]  pathMapper : ", a.pathMapper)
-	log.Info("[PipelineBuilderActivity2:Eval]  defVariable : ", defVariable)
+	log.Info("[PipelineBuilderActivity2:Eval]  variable : ", variable)
 	log.Info("[PipelineBuilderActivity2:Eval]  propertyPrefix : ", propertyPrefix)
 	log.Info("[PipelineBuilderActivity2:Eval]  appProperties : ", appProperties)
 	log.Info("[PipelineBuilderActivity2:Eval]  gProperties : ", gProperties)
@@ -430,7 +429,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		descriptor[oF1Properties], err = a.createK8sF1Properties(
 			log,
 			a.pathMapper,
-			defVariable,
+			variable,
 			propertyPrefix,
 			appProperties,
 			gProperties,
@@ -441,7 +440,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		descriptor[oF1Properties], err = a.createDockerF1Properties(
 			log,
 			a.pathMapper,
-			defVariable,
+			variable,
 			propertyPrefix,
 			appProperties,
 			gProperties,
@@ -457,12 +456,12 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	log.Info("[PipelineBuilderActivity2:Eval]  Descriptor : ", descriptor)
 	log.Info("[PipelineBuilderActivity2:Eval]  PropertyNameDef : ", propertyContainer.GetPropertyNameDef())
 	log.Info("[PipelineBuilderActivity2:Eval]  Runner : ", runner)
-	log.Info("[PipelineBuilderActivity2:Eval]  Variables : ", defVariable)
+	log.Info("[PipelineBuilderActivity2:Eval]  variable : ", variable)
 
 	ctx.SetOutput(oDescriptor, descriptor)
 	ctx.SetOutput(oPropertyNameDef, propertyContainer.GetPropertyNameDef())
 	ctx.SetOutput(oRunner, runner)
-	ctx.SetOutput(oVariable, defVariable)
+	ctx.SetOutput(oVariable, variable)
 
 	return true, nil
 }
@@ -492,7 +491,7 @@ func extractProperties(log log.Logger, logicObj map[string]interface{}) []interf
 func (a *Activity) createDockerF1Properties(
 	log log.Logger,
 	pathMapper *kwr.KeywordMapper,
-	defVariable map[string]interface{},
+	variable map[string]interface{},
 	propertyPrefix string,
 	appProperties []interface{},
 	gProperties []interface{},
@@ -518,21 +517,21 @@ func (a *Activity) createDockerF1Properties(
 		}
 
 		if "String" == dtype {
-			value = pathMapper.Replace(value.(string), defVariable)
+			value = pathMapper.Replace(value.(string), variable)
 			sValue := value.(string)
 			if sValue[0] == '$' && sValue[len(sValue)-1] == '$' {
 				continue
 			}
 		}
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-			"Name":  pathMapper.Replace(util.GetPropertyElementAsString("Name", property), defVariable),
+			"Name":  pathMapper.Replace(util.GetPropertyElementAsString("Name", property), variable),
 			"Value": value,
 			"Type":  util.GetPropertyElementAsString("Type", property),
 		})
 	}
 	for index, property := range appProperties {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-			"Name":  pathMapper.Replace(fmt.Sprintf("%s.environment[%d]", propertyPrefix, index), defVariable),
+			"Name":  pathMapper.Replace(fmt.Sprintf("%s.environment[%d]", propertyPrefix, index), variable),
 			"Value": fmt.Sprintf("%s=%s", util.GetPropertyElement("Name", property), util.GetPropertyElement("Value", property)),
 			"Type":  util.GetPropertyElement("Type", property),
 		})
@@ -540,7 +539,7 @@ func (a *Activity) createDockerF1Properties(
 	index := 0
 	for _, port := range ports {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-			"Name":  pathMapper.Replace(fmt.Sprintf("%s.ports[%d]", propertyPrefix, index), defVariable),
+			"Name":  pathMapper.Replace(fmt.Sprintf("%s.ports[%d]", propertyPrefix, index), variable),
 			"Value": port,
 			"Type":  "String",
 		})
@@ -553,7 +552,7 @@ func (a *Activity) createDockerF1Properties(
 func (a *Activity) createK8sF1Properties(
 	log log.Logger,
 	pathMapper *kwr.KeywordMapper,
-	defVariable map[string]interface{},
+	variable map[string]interface{},
 	propertyPrefix string,
 	appProperties []interface{},
 	gProperties []interface{},
@@ -621,10 +620,10 @@ func (a *Activity) createK8sF1Properties(
 			return nil, err
 		}
 		if "String" == dtype {
-			value = pathMapper.Replace(value.(string), defVariable)
+			value = pathMapper.Replace(value.(string), variable)
 		}
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-			"Name":  pathMapper.Replace(util.GetPropertyElementAsString("Name", property), defVariable),
+			"Name":  pathMapper.Replace(util.GetPropertyElementAsString("Name", property), variable),
 			"Value": value,
 			"Type":  util.GetPropertyElement("Type", property),
 		})
@@ -633,12 +632,12 @@ func (a *Activity) createK8sF1Properties(
 	// Add pipeline parameters
 	for index, property := range appProperties {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-			"Name":  pathMapper.Replace(fmt.Sprintf("%s.env[%d].name", propertyPrefix, index), defVariable),
+			"Name":  pathMapper.Replace(fmt.Sprintf("%s.env[%d].name", propertyPrefix, index), variable),
 			"Value": util.GetPropertyElement("Name", property),
 			"Type":  "string",
 		})
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-			"Name":  pathMapper.Replace(fmt.Sprintf("%s.env[%d].value", propertyPrefix, index), defVariable),
+			"Name":  pathMapper.Replace(fmt.Sprintf("%s.env[%d].value", propertyPrefix, index), variable),
 			"Value": util.GetPropertyElement("Value", property),
 			"Type":  util.GetPropertyElement("Type", property),
 		})
@@ -672,10 +671,10 @@ func (a *Activity) createK8sF1Properties(
 				return nil, err
 			}
 			if "String" == dtype {
-				value = pathMapper.Replace(value.(string), defVariable)
+				value = pathMapper.Replace(value.(string), variable)
 			}
 			ipServiceDescription["Value"] = append(ipServiceDescription["Value"].([]interface{}), map[string]interface{}{
-				"Name":  pathMapper.Replace(util.GetPropertyElementAsString("Name", property), defVariable),
+				"Name":  pathMapper.Replace(util.GetPropertyElementAsString("Name", property), variable),
 				"Value": value,
 				"Type":  util.GetPropertyElement("Type", property),
 			})
@@ -685,7 +684,7 @@ func (a *Activity) createK8sF1Properties(
 		for _, port := range ports {
 			portPair := strings.Split(port.(string), ":")
 			mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
-				"Name":  pathMapper.Replace(fmt.Sprintf("%s.ports[%d]", propertyPrefix, index), defVariable),
+				"Name":  pathMapper.Replace(fmt.Sprintf("%s.ports[%d]", propertyPrefix, index), variable),
 				"Value": portPair[1],
 				"Type":  "String",
 			})
