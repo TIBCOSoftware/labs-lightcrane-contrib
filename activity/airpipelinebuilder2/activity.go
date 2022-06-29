@@ -29,7 +29,6 @@ import (
 	"errors"
 
 	"fmt"
-	"strconv"
 	"strings"
 
 	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
@@ -610,7 +609,7 @@ func (a *Activity) createK8sF1Properties(
 	if 1 < replicas {
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
 			"Name":  "spec.replicas",
-			"Value": strconv.Itoa(replicas),
+			"Value": replicas,
 			"Type":  "string",
 		})
 	}
