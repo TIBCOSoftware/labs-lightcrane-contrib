@@ -152,7 +152,7 @@ type Activity struct {
 	template    *model.FlogoTemplateLibrary
 	pathMapper  *kwr.KeywordMapper
 	variables   map[string]string
-	gProperties []map[string]interface{}
+	gProperties []interface{}
 }
 
 func New(ctx activity.InitContext) (activity.Activity, error) {
@@ -173,13 +173,13 @@ func New(ctx activity.InitContext) (activity.Activity, error) {
 	}
 
 	// Build group properties
-	gProperties := make([]map[string]interface{}, 0)
+	gProperties := make([]interface{}, 0)
 	if "" != settings.Properties {
 		var gPropertiesSetting []interface{}
 		err := json.Unmarshal([]byte(settings.Properties), &gPropertiesSetting)
 		if nil == err {
 			for _, gProperty := range gPropertiesSetting {
-				gProperties = append(gProperties, gProperty.(map[string]interface{}))
+				gProperties = append(gProperties, gProperty)
 			}
 		}
 	}
@@ -230,7 +230,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	input := &Input{}
 	ctx.GetInputObject(input)
 
-	gProperties := util.DeepCopy(a.gProperties).([]map[string]interface{})
+	gProperties := util.DeepCopy(a.gProperties).([]interface{})
 
 	applicationName := input.ApplicationName
 	if "" == applicationName {
@@ -495,7 +495,7 @@ func (a *Activity) createDockerF1Properties(
 	defVariable map[string]interface{},
 	propertyPrefix string,
 	appProperties []interface{},
-	gProperties []map[string]interface{},
+	gProperties []interface{},
 	ports []interface{},
 	replica int,
 ) (interface{}, error) {
@@ -508,7 +508,8 @@ func (a *Activity) createDockerF1Properties(
 	description = append(description, mainDescription)
 	log.Info("[PipelineBuilderActivity2:createDockerF1Properties]  description1 : ", description)
 
-	for _, property := range gProperties {
+	for _, element := range gProperties {
+		property := element.(map[string]interface{})
 		log.Info("[PipelineBuilderActivity2:createDockerF1Properties]  property : ", property)
 		/* nil will not be accepted */
 		value, dtype, err := util.GetPropertyValue(property["Value"], property["Type"])
@@ -555,12 +556,13 @@ func (a *Activity) createK8sF1Properties(
 	defVariable map[string]interface{},
 	propertyPrefix string,
 	appProperties []interface{},
-	gProperties []map[string]interface{},
+	gProperties []interface{},
 	ports []interface{},
 	replicas int,
 ) (interface{}, error) {
 	groupProperties := make(map[string]interface{})
-	for _, property := range gProperties {
+	for _, element := range gProperties {
+		property := element.(map[string]interface{})
 		name := util.GetPropertyElementAsString("Name", property)
 		log.Info("[PipelineBuilderActivity2:createK8sF1Properties] name : ", name)
 		if 0 < strings.Index(name, "_") {
