@@ -230,10 +230,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	input := &Input{}
 	ctx.GetInputObject(input)
 
-	gProperties := make([]map[string]interface{}, len(a.gProperties))
-	for index, gProperty := range a.gProperties {
-		gProperties[index] = gProperty
-	}
+	gProperties := util.DeepCopy(a.gProperties).([]map[string]interface{})
 
 	applicationName := input.ApplicationName
 	if "" == applicationName {
@@ -576,7 +573,7 @@ func (a *Activity) createK8sF1Properties(
 			property["Name"] = name
 			groupProperties[group] = append(groupProperties[group].([]interface{}), property)
 		} else {
-			log.Info("[PipelineBuilderActivity2:createK8sF1Properties] has group name! ")
+			log.Info("[PipelineBuilderActivity2:createK8sF1Properties] has no group name! ")
 		}
 	}
 	/*
