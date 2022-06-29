@@ -608,7 +608,7 @@ func (a *Activity) createK8sF1Properties(
 		mainDescription["Value"] = append(mainDescription["Value"].([]interface{}), map[string]interface{}{
 			"Name":  "spec.replicas",
 			"Value": replicas,
-			"Type":  "string",
+			"Type":  "int",
 		})
 	}
 
