@@ -29,6 +29,7 @@ import (
 	"errors"
 
 	"fmt"
+	"strconv"
 	"strings"
 
 	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
@@ -378,7 +379,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 						}
 					}
 				} else if "App.Replicas" == name {
-					replicas = int(util.GetPropertyElement("Value", property).(float64))
+					replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
 				}
 			}
 		}
