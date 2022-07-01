@@ -23,6 +23,7 @@ var log = logger.GetLogger("activity-table-mutate")
 const (
 	setting_Table  = "Table"
 	setting_Method = "Method"
+	Method_Insert  = "insert"
 	Method_Upsert  = "upsert"
 	Method_Delete  = "delete"
 	input          = "Mapping"
@@ -72,6 +73,8 @@ func (a *TableMutateActivity) Eval(ctx activity.Context) (done bool, err error) 
 	var newRecord *table.Record
 	var oldRecord *table.Record
 	switch method {
+	case Method_Insert:
+		newRecord, oldRecord = myTable.Insert(iData.(map[string]interface{}))
 	case Method_Upsert:
 		newRecord, oldRecord = myTable.Upsert(iData.(map[string]interface{}))
 	case Method_Delete:

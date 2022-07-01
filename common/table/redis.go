@@ -8,7 +8,6 @@ package table
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strconv"
 
 	"github.com/go-redis/redis/v8"
@@ -98,7 +97,7 @@ func (this *Redis) Get(searchKey []string, data map[string]interface{}) ([]*Reco
 	return records, true
 }
 
-func (this *Redis) Insert(data map[string]interface{}) bool {
+func (this *Redis) Insert(data map[string]interface{}) (*Record, *Record) {
 	log.Info("(Insert) data : ", data)
 	log.Info("(Insert) pKey : ", this.pKey)
 
@@ -108,9 +107,11 @@ func (this *Redis) Insert(data map[string]interface{}) bool {
 	log.Info("(Insert) pKeyValueHash : ", pKeyValueHash)
 	log.Info("(Insert) redisKey : ", redisKey)
 
+	var oldRecord Record
+	var record Record
 	ctx := context.Background()
 	err := this.rdb.Watch(ctx, func(tx *redis.Tx) error {
-		_, err := this.rdb.Get(ctx, redisKey).Result()
+		oldRecordString, err := this.rdb.Get(ctx, redisKey).Result()
 		if err == redis.Nil {
 			// record not exists so we can insert
 			recordByte, _ := json.Marshal(data)
@@ -120,6 +121,7 @@ func (this *Redis) Insert(data map[string]interface{}) bool {
 				return err
 			}
 			// record inserted
+			record = data
 			return nil
 		} else if err != nil {
 			// prefetch error
@@ -127,16 +129,29 @@ func (this *Redis) Insert(data map[string]interface{}) bool {
 		}
 
 		// record exists
-		return errors.New("record exists")
+		if err := json.Unmarshal([]byte(oldRecordString), &oldRecord); err != nil {
+			log.Error("(Get) Record format incorrect : ", err.Error())
+			return err
+		}
+		return nil
 
 	}, redisKey)
 
 	if nil != err {
-		log.Error("Error happens : ", err)
-		return false
-	} else {
-		return true
+		log.Error("Error when insert to Redis DB : ", err)
+		return nil, nil
 	}
+
+	var recordPt *Record
+	if 0 < len(record) {
+		recordPt = &record
+	}
+	var oldRecordPt *Record
+	if 0 < len(oldRecord) {
+		oldRecordPt = &oldRecord
+	}
+
+	return recordPt, oldRecordPt
 }
 
 func (this *Redis) Upsert(data map[string]interface{}) (*Record, *Record) {

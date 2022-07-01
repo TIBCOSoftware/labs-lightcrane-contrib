@@ -91,8 +91,8 @@ func TestRedisInsert(t *testing.T) {
 	}
 	myTable := GetTableManager().CreateTable(properties)
 
-	ok := myTable.Insert(map[string]interface{}{
-		"ProjectID": "1234567890x",
+	record, oldRecord := myTable.Insert(map[string]interface{}{
+		"ProjectID": "1234567890z",
 		"Name":      "Test Project",
 		"Data": map[string]interface{}{
 			"aaa": 1,
@@ -100,5 +100,5 @@ func TestRedisInsert(t *testing.T) {
 		},
 	})
 
-	log.Info("ok = ", ok)
+	log.Info("record = ", record, ", oldRecord = ", oldRecord)
 }

@@ -74,7 +74,7 @@ type Table interface {
 	GetPkeyNames() []string
 	GetAll() ([]*Record, bool)
 	Get(searchKey []string, data map[string]interface{}) ([]*Record, bool)
-	Insert(data map[string]interface{}) bool
+	Insert(data map[string]interface{}) (*Record, *Record)
 	Upsert(data map[string]interface{}) (*Record, *Record)
 	Delete(data map[string]interface{}) *Record
 	RowCount() int
