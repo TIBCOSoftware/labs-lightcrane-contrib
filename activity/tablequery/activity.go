@@ -11,11 +11,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/table"
-	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/core/data"
 	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/table"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
 )
 
 // activityLogger is the default logger for the Filter Activity
@@ -88,7 +88,7 @@ func (a *TableQueryActivity) Eval(ctx activity.Context) (done bool, err error) {
 	return true, nil
 }
 
-func (a *TableQueryActivity) getTable(context activity.Context) ([]string, *table.Table, error) {
+func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table.Table, error) {
 	myId := util.ActivityId(context)
 
 	myTable := table.GetTableManager().GetTable(a.activityToTable[myId])
@@ -108,15 +108,17 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, *tabl
 
 			iTableInfo, exist := context.GetSetting(setting_Table)
 			if !exist {
-				return nil, nil, activity.NewError("(getTable)Table is not configured", "TABLE_UPSERT-4002", nil)
+				return nil, nil, activity.NewError("(getTable)Table is not configured", "TABLE_QUERY-4002", nil)
 			}
 
 			//Read table details
 			tableInfo, _ := data.CoerceToObject(iTableInfo)
 			if tableInfo == nil {
-				return nil, nil, activity.NewError("(getTable)Unable extract table details", "TABLE_UPSERT-4001", nil)
+				return nil, nil, activity.NewError("(getTable)Unable extract table details", "TABLE_QUERY-4001", nil)
 			}
 
+			tabletype := table.IN_MEMORY
+			propertiesArray := []interface{}{}
 			var tablename string
 			var schema []interface{}
 			tableSettings, _ := tableInfo["settings"].([]interface{})
@@ -128,11 +130,23 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, *tabl
 						if setting["name"] == "schema" {
 							iSchema := setting["value"]
 							if nil == iSchema {
-								return nil, nil, activity.NewError("(getTable)Unable to get model string", "TABLE_UPSERT-4004", nil)
+								return nil, nil, activity.NewError("(getTable)Unable to get schema string", "TABLE_QUERY-4004", nil)
 							}
 							err := json.Unmarshal([]byte(iSchema.(string)), &schema)
 							if nil != err {
 								return nil, nil, err
+							}
+						} else if setting["name"] == "Properties" {
+							iProperties := setting["value"]
+							if nil != iProperties {
+								err := json.Unmarshal([]byte(iProperties.(string)), &propertiesArray)
+								if nil != err {
+									return nil, nil, err
+								}
+							}
+						} else if setting["name"] == "type" {
+							if nil != setting["value"] {
+								tabletype = setting["value"].(string)
 							}
 						} else if setting["name"] == "name" {
 							tablename = setting["value"].(string)
@@ -142,13 +156,17 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, *tabl
 			}
 
 			if "" == tablename {
-				return nil, nil, activity.NewError("(getTable)Unable to get table name", "TABLE_UPSERT-4003", nil)
+				return nil, nil, activity.NewError("(getTable)Unable to get table name", "TABLE_QUERY-4003", nil)
 			}
 
 			log.Debug("-============= TABLE SCHEMA ================-")
 			log.Debug(schema)
 			log.Debug("-===========================================-")
+			log.Debug("-============= TABLE PROPERTIES ================-")
+			log.Debug(propertiesArray)
+			log.Debug("-===============================================-")
 
+			properties := make(map[string]interface{})
 			keyName := make([]string, 0)
 			indexible := make([]string, 0)
 			schemaArray := make([](map[string]interface{}), len(schema))
@@ -163,21 +181,22 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, *tabl
 				}
 			}
 
+			for _, field := range propertiesArray {
+				properties[field.(map[string]interface{})["Name"].(string)] = field.(map[string]interface{})["Value"]
+			}
+
 			myTable = table.GetTableManager().GetTable(tablename)
 			if nil == myTable {
 				tableSchema := table.CreateSchema(&schemaArray)
-				myTable = table.GetTableManager().CreateTable(
-					keyName,
-					tablename,
-					tableSchema,
-				)
-
-				for index := 0; index < len(indexible); index++ {
-					myTable.GenerateKeys(indexible, make([]string, index+1), 0, len(indexible)-1, 0, index+1)
-				}
+				properties["pKey"] = keyName
+				properties["indices"] = indexible
+				properties["tableType"] = tabletype
+				properties["tablename"] = tablename
+				properties["tableSchema"] = tableSchema
+				myTable = table.GetTableManager().CreateTable(properties)
 			}
 
-			log.Debug("(getTable) init : ", "initialize table done ....")
+			log.Debug("(getTable) init : ", "initialize table done : myTable = ", myTable)
 			a.activityToTable[myId] = tablename
 			a.activityToQueryKeys[myId] = queryKeys
 		}

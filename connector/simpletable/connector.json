@@ -23,11 +23,31 @@
 			}
     	},
 		{
+			"name": "type",
+			"type": "string",
+			"required": true,
+			"display": {
+				"name": "Table Type",
+				"description": "type of the table instance"
+			}
+    	},
+		{
 			"name": "description",
 			"type": "string",
 			"display": {
 				"name": "Description",
 				"description": "A simple table for storing tuple"
+			}
+		},
+		{
+			"name": "properties",
+			"type": "array",
+			"required": true,
+			"display": {
+				"name": "Properties",
+				"description": "Properties of the table",
+				"type": "table",
+				"schema": "{\r\n    \"$schema\": \"http:\/\/json-schema.org\/draft-04\/schema#\",\r\n    \"definitions\": {},\r\n    \"id\": \"http:\/\/example.com\/example.json\",\r\n    \"items\": {\r\n        \"id\": \"\/items\",\r\n        \"properties\": {\r\n            \"Name\": {\r\n                \"id\": \"\/items\/properties\/Name\",\r\n                \"type\": \"string\"\r\n            },\r\n            \"Value\": {\r\n                \"id\": \"\/items\/properties\/Value\",\r\n                \"type\": \"string\"\r\n            }\r\n        },\r\n        \"type\": \"object\"\r\n    },\r\n    \"type\": \"array\"\r\n}"
 			}
 		},
 		{
