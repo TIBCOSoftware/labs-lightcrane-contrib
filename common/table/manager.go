@@ -9,7 +9,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
-	"os"
 	"sync"
 
 	"github.com/TIBCOSoftware/flogo-lib/logger"
@@ -17,8 +16,13 @@ import (
 
 var log = logger.GetLogger("tibco-f1-table")
 
+const (
+	REDIS     = "Redis"
+	IN_MEMORY = "InMemory"
+)
+
 type TableManager struct {
-	tables map[string]*Table
+	tables map[string]Table
 }
 
 var (
@@ -29,32 +33,33 @@ var (
 
 func GetTableManager() *TableManager {
 	once.Do(func() {
-		instance = &TableManager{tables: make(map[string]*Table)}
+		instance = &TableManager{tables: make(map[string]Table)}
 	})
 	return instance
 }
 
-func (this *TableManager) GetTable(tablename string) *Table {
+func (this *TableManager) GetTable(tablename string) Table {
 	return this.tables[tablename]
 }
 
-func (this *TableManager) CreateTable(
-	pKey []string,
-	tablename string,
-	tableSchema *Schema) *Table {
+func (this *TableManager) CreateTable(properties map[string]interface{}) Table {
 
+	tablename := properties["tablename"].(string)
+	tableType := ""
+	if nil != properties["tableType"] {
+		tableType = properties["tableType"].(string)
+	}
 	table := this.tables[tablename]
 	if nil == table {
 		mux.Lock()
 		defer mux.Unlock()
 		table = this.tables[tablename]
 		if nil == table {
-			table = &Table{
-				pKey:          pKey,
-				indices:       make([][]string, 0),
-				theMap:        make(map[CompositKey]*Record),
-				theIndexedKey: make(map[CompositKey]map[CompositKey][]CompositKey),
-				tableSchema:   tableSchema,
+			log.Info("Table type : ", tableType)
+			if REDIS == tableType {
+				table = NewRedis(properties)
+			} else {
+				table = NewInMenmory(properties)
 			}
 			this.tables[tablename] = table
 		}
@@ -63,183 +68,16 @@ func (this *TableManager) CreateTable(
 	return table
 }
 
-type Table struct {
-	pKey          []string
-	indices       [][]string
-	tableSchema   *Schema
-	theMap        map[CompositKey]*Record
-	theIndexedKey map[CompositKey]map[CompositKey][]CompositKey
-}
-
-func (this *Table) AddIndex(keyName []string) bool {
-	key, _ := ConstructKey(keyName, nil)
-	this.indices = append(this.indices, keyName)
-	this.theIndexedKey[key] = make(map[CompositKey][]CompositKey)
-	log.Debug("(AddIndex) table after add index: indices = ", this.indices, ", table = ", this.theMap)
-	return true
-}
-
-func (this *Table) RemoveIndex(keyName []string) bool {
-	key, _ := ConstructKey(keyName, nil)
-	this.theMap[key] = nil
-	return true
-}
-
-func (this *Table) GetPkeyNames() []string {
-	return this.pKey
-}
-
-func (this *Table) GetAll() ([]*Record, bool) {
-	records := make([]*Record, 0)
-	for _, record := range this.theMap {
-		records = append(records, record)
-	}
-	return records, false
-}
-
-func (this *Table) Get(searchKey []string, data map[string]interface{}) ([]*Record, bool) {
-	log.Debug("(Get) searchKey : ", searchKey)
-	log.Debug("(Get) data : ", data)
-	log.Debug("(Get) pKey : ", this.pKey)
-	log.Debug("(Get) theMap : ", this.theMap)
-
-	///////// Need to be fixed ////////
-	dumpTable := true
-	for _, key := range data {
-		if "*" != key.(string) {
-			dumpTable = false
-			break
-		}
-	}
-	if dumpTable {
-		return this.GetAll()
-	}
-	//////////////////////////////////
-
-	records := make([]*Record, 0)
-	pKeyHash, pKeyValueHash := ConstructKey(this.pKey, data)
-	searchKeyHash, searchKeyValueHash := ConstructKey(searchKey, data)
-
-	log.Debug("(Get) pKeyValueHash : ", pKeyValueHash)
-	log.Debug("(Get) searchKeyValueHash : ", searchKeyValueHash)
-
-	searchByPKey := true
-	if searchKeyHash == pKeyHash {
-		log.Debug("(Get) Get by primary key !")
-		record := this.theMap[pKeyValueHash]
-		if nil != record {
-			records = append(records, record)
-		}
-	} else {
-		log.Debug("(Get) Get by indexed search key !")
-		searchByPKey = false
-		pKeyValueHashs := this.theIndexedKey[searchKeyHash][searchKeyValueHash]
-		if nil != pKeyValueHashs {
-			newPKeyValueHashs := make([]CompositKey, 0)
-			for _, pKeyValueHash := range pKeyValueHashs {
-				if nil != this.theMap[pKeyValueHash] {
-					records = append(records, this.theMap[pKeyValueHash])
-					newPKeyValueHashs = append(newPKeyValueHashs, pKeyValueHash)
-				}
-			}
-			this.theIndexedKey[searchKeyHash][searchKeyValueHash] = newPKeyValueHashs
-		}
-	}
-
-	return records, searchByPKey
-}
-
-func (this *Table) Upsert(data map[string]interface{}) (*Record, *Record) {
-	log.Debug("(Upsert) data : ", data)
-	log.Debug("(Upsert) pKey : ", this.pKey)
-	log.Debug("(Upsert) theMap before : ", this.theMap)
-
-	_, pKeyValueHash := ConstructKey(this.pKey, data)
-	record := this.theMap[pKeyValueHash]
-	var oldRecord *Record
-
-	if nil != record {
-		oldRecord = record.Clone()
-		for _, fieldInfo := range *this.tableSchema.DataSchemas() {
-			fieldName := fieldInfo["Name"].(string)
-			fieldValue := data[fieldName]
-			if nil != fieldValue {
-				(*record)[fieldName] = fieldValue
-			}
-		}
-	} else {
-		// Create new record
-		record = &Record{}
-		for _, fieldInfo := range *this.tableSchema.DataSchemas() {
-			(*record)[fieldInfo["Name"].(string)] = data[fieldInfo["Name"].(string)]
-		}
-		this.theMap[pKeyValueHash] = record
-
-		// Indexing record
-		for _, index := range this.indices {
-			indexHash, indexValueHash := ConstructKey(index, data)
-			pKeyValueHashs := this.theIndexedKey[indexHash][indexValueHash]
-			if nil != pKeyValueHashs {
-				this.theIndexedKey[indexHash][indexValueHash] = append(this.theIndexedKey[indexHash][indexValueHash], pKeyValueHash)
-			} else {
-				this.theIndexedKey[indexHash][indexValueHash] = []CompositKey{pKeyValueHash}
-			}
-		}
-	}
-
-	log.Debug("(Upsert) theMap after : ", this.theMap)
-
-	return record, oldRecord
-}
-
-func (this *Table) Delete(data map[string]interface{}) *Record {
-	log.Debug("(Delete) data : ", data)
-	log.Debug("(Delete) pKey : ", this.pKey)
-	log.Debug("(Delete) theMap before : ", this.theMap)
-
-	_, pKeyValueHash := ConstructKey(this.pKey, data)
-	record := this.theMap[pKeyValueHash]
-
-	if nil != record {
-		delete(this.theMap, pKeyValueHash)
-	}
-
-	log.Debug("(Delete) theMap after : ", this.theMap)
-
-	return record
-}
-
-func (this *Table) RowCount() int {
-	return len(this.theMap)
-}
-
-func (this *Table) Load(file *os.File) {
-}
-
-func (this *Table) SaveSchema(file *os.File) {
-}
-
-func (this *Table) SaveData(file *os.File) {
-}
-
-func (this *Table) GenerateKeys(arr []string, data []string, start int, end int, index int, r int) {
-	log.Debug("(GenerateKeys) GenerateKeys, index = ", index, ", r = ", r, ", arr", arr)
-	if index == r {
-		log.Debug("(GenerateKeys) GenerateKeys, data = ", data)
-		key := make([]string, 0)
-		for j := 0; j < r; j++ {
-			key = append(key, data[j])
-		}
-		this.AddIndex(key)
-		return
-	}
-
-	i := start
-	for i <= end && end-i+1 >= r-index {
-		data[index] = arr[i]
-		this.GenerateKeys(arr, data, i+1, end, index+1, r)
-		i += 1
-	}
+type Table interface {
+	AddIndex(keyName []string) bool
+	RemoveIndex(keyName []string) bool
+	GetPkeyNames() []string
+	GetAll() ([]*Record, bool)
+	Get(searchKey []string, data map[string]interface{}) ([]*Record, bool)
+	Insert(data map[string]interface{}) bool
+	Upsert(data map[string]interface{}) (*Record, *Record)
+	Delete(data map[string]interface{}) *Record
+	RowCount() int
 }
 
 type Record map[string]interface{}
