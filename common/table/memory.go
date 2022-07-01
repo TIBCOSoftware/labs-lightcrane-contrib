@@ -110,8 +110,41 @@ func (this *InMemoryTable) Get(searchKey []string, data map[string]interface{}) 
 	return records, searchByPKey
 }
 
-func (this *InMemoryTable) Insert(data map[string]interface{}) bool {
-	return false
+func (this *InMemoryTable) Insert(data map[string]interface{}) (*Record, *Record) {
+	log.Info("(Insert) data : ", data)
+	log.Info("(Insert) pKey : ", this.pKey)
+	log.Info("(Insert) theMap before : ", this.theMap)
+
+	_, pKeyValueHash := ConstructKey(this.pKey, data)
+	record := this.theMap[pKeyValueHash]
+	var oldRecord *Record
+
+	if nil != record {
+		oldRecord = record.Clone()
+		record = nil
+	} else {
+		// Create new record
+		record = &Record{}
+		for _, fieldInfo := range *this.tableSchema.DataSchemas() {
+			(*record)[fieldInfo["Name"].(string)] = data[fieldInfo["Name"].(string)]
+		}
+		this.theMap[pKeyValueHash] = record
+
+		// Indexing record
+		for _, index := range this.indices {
+			indexHash, indexValueHash := ConstructKey(index, data)
+			pKeyValueHashs := this.theIndexedKey[indexHash][indexValueHash]
+			if nil != pKeyValueHashs {
+				this.theIndexedKey[indexHash][indexValueHash] = append(this.theIndexedKey[indexHash][indexValueHash], pKeyValueHash)
+			} else {
+				this.theIndexedKey[indexHash][indexValueHash] = []CompositKey{pKeyValueHash}
+			}
+		}
+	}
+
+	log.Info("(Insert) theMap after : ", this.theMap)
+
+	return record, oldRecord
 }
 
 func (this *InMemoryTable) Upsert(data map[string]interface{}) (*Record, *Record) {
