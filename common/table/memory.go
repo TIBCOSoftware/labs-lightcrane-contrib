@@ -10,13 +10,18 @@ import (
 )
 
 func NewInMenmory(properties map[string]interface{}) *InMemoryTable {
-	return &InMemoryTable{
+	myTable := &InMemoryTable{
 		pKey:          properties["pKey"].([]string),
 		indices:       make([][]string, 0),
 		theMap:        make(map[CompositKey]*Record),
 		theIndexedKey: make(map[CompositKey]map[CompositKey][]CompositKey),
 		tableSchema:   properties["tableSchema"].(*Schema),
 	}
+	indexible := properties["indices"].([]string)
+	for index := 0; index < len(indexible); index++ {
+		myTable.GenerateKeys(indexible, make([]string, index+1), 0, len(indexible)-1, 0, index+1)
+	}
+	return myTable
 }
 
 type InMemoryTable struct {

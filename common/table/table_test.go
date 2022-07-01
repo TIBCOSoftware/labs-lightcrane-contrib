@@ -36,6 +36,7 @@ func TestInMemoryUpsert(t *testing.T) {
 	tableSchema := CreateSchema(&schemaArray)
 	properties := map[string]interface{}{
 		"pKey":        []string{"ProjectID"},
+		"indices":     []string{},
 		"tabletype":   IN_MEMORY,
 		"tablename":   "inMemory",
 		"tableSchema": tableSchema,
