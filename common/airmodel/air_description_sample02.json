@@ -1,0 +1,43 @@
+{
+        "source": {
+            "name": "DataSource.HTTP",
+            "properties" : [
+                {"Name":"Logging.LogLevel", "Value": "INFO"}
+            ],
+            "ports" : [
+                "8080:9999"
+            ]
+        },
+        "logic": [
+            {
+                "name": "Transform.BASE64",
+                "properties" : [
+                    {"Name":"Logging.LogLevel", "Value": "INFO"}
+                ]
+            },
+            {
+                "name": "Inference.REST",
+                "properties" : [
+                    {"Name": "REST.InferenceData", "Value": "{\"data\": \"@f1..value@\", \"extrafield\":\"abd\"}"},
+                    {"Name": "REST.Conditions", "Value": "[{\"name\":\"r2\", \"device\":\"d1\"}, {\"name\":\"r1\", \"device\":\"d2\"}]"},
+                    {"Name": "REST.URLMapping", "Value": "[{\"Alias\":\"0\",\"URL\":\"http://3.228.65.62:8081/f1/air/rest/v1\"},{\"Alias\":\"1\",\"URL\":\"http://3.228.65.62:8081/f1/air/rest/v2\"}]"}
+                ]
+            },
+            {
+                "name": "Pipe.MQTT2",
+                "properties" : [
+                    {"Name": "Mqtt.IoTMQTT.Broker_URL", "Value": "tcp://71.167.29.247:1883"},
+                    {"Name": "Mqtt.IoTMQTT.Username", "Value": "mqtt_admin"},
+                    {"Name": "Mqtt.IoTMQTT.Password", "Value": "SECRET:79V5PfQgmw5mTglH3kNiNcoeLPJGsx1w7Tw="},
+                    {"Name": "Logging.LogLevel", "Value": "Info"},
+                    {"Name": "MQTTPub.Topic", "Value": "AIRModelScoredData02"}
+                ]
+            }
+        ],
+        "extra": [
+            {
+                "Name": "networks.default.name",
+                "Value": "http_rest_mqtt"
+            }
+        ]
+    }
