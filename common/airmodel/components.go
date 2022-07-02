@@ -91,7 +91,7 @@ func (this DataSource) BuildActivities(subflowID string) []interface{} {
 	activities := make([]interface{}, 0)
 	for index, activity := range this.defaultActivities {
 		if index == len(this.defaultActivities)-1 {
-			previousActivityId := this.defaultActivities[index-1].(map[string]interface{})["id"]
+			previousActivityId := this.defaultActivities[index-1].(map[string]interface{})["id"].(string)
 			//log.Debug("$$$$$$$$$$$$$$$$$$$", previousActivityId)
 			if "Next_Flow" == previousActivityId {
 				subflowActivity := this.defaultActivities[index-1].(map[string]interface{})
