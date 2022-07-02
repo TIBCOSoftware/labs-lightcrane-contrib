@@ -97,7 +97,7 @@ func (this DataSource) BuildActivities(subflowID string) []interface{} {
 				subflowActivity := this.defaultActivities[index-1].(map[string]interface{})
 				_ = objectbuilder.SetObject(subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
 			} else {
-				if "NewFlowData" == previousActivityId {
+				if strings.HasPrefix(previousActivityId, "NewFlowData") {
 					_ = objectbuilder.SetObject(this.subflowActivity, "root.settings.iterate", "=$activity[NewFlowData].Data.readings")
 					_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.input.gateway", "=$activity[NewFlowData].Data.gateway")
 					_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.input.reading", "=$iteration[value]")
