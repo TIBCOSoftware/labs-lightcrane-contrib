@@ -29,7 +29,6 @@ import (
 	"errors"
 
 	"fmt"
-	"strconv"
 	"strings"
 
 	kwr "github.com/TIBCOSoftware/labs-lightcrane-contrib/common/keywordreplace"
@@ -255,144 +254,20 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	        Construct Pipeline
 	**********************************/
 
-	var ports []interface{}
-	descriptor := make(map[string]interface{})
-	var appProperties []interface{}
+	descriptorString, runner, ports, replicas, err := model.BuildFlogoApp(
+		a.template,
+		applicationName,
+		applicationPipelineDescriptor,
+		a.variables,
+		gProperties,
+	)
 
-	/* Create a new pipeline */
-	pipeline := a.template.GetPipeline()
-
-	/* Declare notification listener */
-	notificationListeners := map[string]interface{}{
-		"ErrorHandler": make([]interface{}, 0),
-	}
-	log.Info("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
-
-	/* Add notifier for error handlers */
-	notifier := a.template.GetComponent(0, "Notifier", "Default", nil).(model.Notifier)
-	pipeline.AddNotifier("ErrorHandler", notifier)
-
-	/* Adding data source */
-	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
-	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
-	category, name := parseName(sourceObj["name"].(string))
-	dataSource := a.template.GetComponent(-1, category, name, extractProperties(log, sourceObj)).(model.DataSource)
-
-	pipeline.SetDataSource(dataSource)
-	/* If any server port defined */
-	if nil != sourceObj[iPorts] {
-		ports = sourceObj[iPorts].([]interface{})
-	}
-
-	/* Adding logics and find a runner*/
-	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
-	var runner interface{}
-	replicas := 1
-	for key, value := range applicationPipelineDescriptor {
-		switch key {
-		case "logic":
-			logicArray := value.([]interface{})
-			normalFlow := make([]interface{}, 0)
-			errorFlow := make([]interface{}, 0)
-
-			isEventFlow := true
-			for _, logic := range logicArray {
-				logicObj := logic.(map[string]interface{})
-				category, _ := parseName(logicObj["name"].(string))
-
-				if "Error" == category {
-					isEventFlow = false
-				}
-
-				if isEventFlow {
-					normalFlow = append(normalFlow, logic)
-				} else {
-					errorFlow = append(errorFlow, logic)
-				}
-			}
-
-			logicSN := 0
-			for _, logic := range normalFlow {
-				logicObj := logic.(map[string]interface{})
-				category, name := parseName(logicObj["name"].(string))
-				logic := a.template.GetComponent(logicSN, category, name, extractProperties(log, logicObj)).(model.Logic)
-				pipeline.AddNormalLogic(logic)
-
-				if nil != logic.GetRunner() {
-					runner = logic.GetRunner()
-				}
-
-				/* Add notifier for the cmponent which generate notification. */
-				if nil != logic.GetNotificationBroker() {
-					/* Add Notifier */
-					brokerCategory, brokerName := parseName(logic.GetNotificationBroker().(string))
-					notifier := a.template.GetComponent(logicSN, brokerCategory, brokerName, nil).(model.Notifier)
-					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, logicSN), notifier)
-				}
-				logicSN++
-			}
-
-			pipeline.AddNormalLogic(a.template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
-			logicSN++
-
-			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("Error_%d", logicSN))
-			if 0 != len(errorFlow) {
-				for _, logic := range errorFlow {
-					logicObj := logic.(map[string]interface{})
-					category, name := parseName(logicObj["name"].(string))
-					pipeline.AddErrorLogic(a.template.GetComponent(logicSN, category, name, extractProperties(log, logicObj)).(model.Logic))
-					logicSN++
-				}
-				pipeline.AddErrorLogic(a.template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(model.Logic))
-			} else {
-				pipeline.AddErrorLogic(a.template.GetComponent(logicSN, "Error", "Default", []interface{}{}).(model.Logic))
-			}
-
-			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
-
-		case "extra":
-			if nil == value {
-				continue
-			}
-			extraArray := value.([]interface{})
-			for _, property := range extraArray {
-				name := util.GetPropertyElement("Name", property).(string)
-				if !strings.HasPrefix(name, "App.") {
-					gProperties = append(gProperties, map[string]interface{}{
-						"Name":  name,
-						"Value": util.GetPropertyElement("Value", property),
-						"Type":  util.GetPropertyElement("Type", property),
-					})
-				} else if "App.NotificationListeners" == name {
-					/* Get notification listeners from request */
-					var listeners map[string]interface{}
-					json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-					log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
-					/* Merge listeners */
-					for key, value := range listeners {
-						if nil == notificationListeners[key] {
-							notificationListeners[key] = value
-						} else {
-							for _, name := range value.([]interface{}) {
-								notificationListeners[key] = append(notificationListeners[key].([]interface{}), name)
-							}
-						}
-					}
-				} else if "App.Replicas" == name {
-					replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
-				}
-			}
-		}
-	}
-	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
-	pipeline.SetListeners(notificationListeners)
-
-	descriptorString, _ := pipeline.Build()
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
 
 	/*********************************
 	    Construct Dynamic Parameter
 	**********************************/
+	var appProperties []interface{}
 
 	propertyContainer := pipeline.GetProperties()
 	appProperties = applicationPipelineDescriptor["properties"].([]interface{})

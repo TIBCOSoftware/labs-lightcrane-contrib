@@ -87,27 +87,40 @@ func (this DataSource) Build(subflowID string) {
 }
 
 func (this DataSource) BuildActivities(subflowID string) []interface{} {
-	//log.Debug("$$$$$$$$$$", this.name)
+	log.Info("------->", this.name)
 	activities := make([]interface{}, 0)
 	for index, activity := range this.defaultActivities {
-		if index == len(this.defaultActivities)-1 {
+		if 0 < index { //} == len(this.defaultActivities)-1 {
 			previousActivityId := this.defaultActivities[index-1].(map[string]interface{})["id"].(string)
-			//log.Debug("$$$$$$$$$$$$$$$$$$$", previousActivityId)
-			if "Next_Flow" == previousActivityId {
+			log.Info("$$$$$$$$$$$$$$$$$$$", previousActivityId)
+			if strings.HasPrefix(previousActivityId, "Next_Flow") {
+				log.Info(">>>>>>>>>>>>>>>>>>>>>Found Next_Flow", previousActivityId)
 				subflowActivity := this.defaultActivities[index-1].(map[string]interface{})
 				_ = objectbuilder.SetObject(subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
-			} else {
-				if strings.HasPrefix(previousActivityId, "NewFlowData") {
-					_ = objectbuilder.SetObject(this.subflowActivity, "root.settings.iterate", "=$activity[NewFlowData].Data.readings")
-					_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.input.gateway", "=$activity[NewFlowData].Data.gateway")
-					_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.input.reading", "=$iteration[value]")
-					_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.input.enriched", "=$activity[NewFlowData].Data.enriched")
-				}
-				_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
-				activities = append(activities, this.subflowActivity)
+			} else if strings.HasPrefix(previousActivityId, "NewFlowData_") {
+				log.Info(">>>>>>>>>>>>>>>>>>>>>Found NewFlowData_", previousActivityId)
+				branchId := "Next_Flow_" + previousActivityId[len("NewFlowData_"):]
+				subflowActivity := util.DeepCopy(this.subflowActivity).(map[string]interface{})
+				_ = objectbuilder.SetObject(subflowActivity, "root.id", branchId)
+				_ = objectbuilder.SetObject(subflowActivity, "root.name", branchId)
+				_ = objectbuilder.SetObject(subflowActivity, "root.settings.iterate", "=$activity[NewFlowData].Data.readings")
+				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.gateway", "=$activity[NewFlowData].Data.gateway")
+				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.reading", "=$iteration[value]")
+				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.enriched", "=$activity[NewFlowData].Data.enriched")
+				_ = objectbuilder.SetObject(subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
+				activities = append(activities, subflowActivity)
 			}
+			log.Info(">>>>>>>>>>>>>>>>>>>>>length", len(activities))
 		}
+		if index == len(this.defaultActivities)-1 &&
+			index == len(activities) {
+			subflowActivity := util.DeepCopy(this.subflowActivity).(map[string]interface{})
+			_ = objectbuilder.SetObject(subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
+			activities = append(activities, subflowActivity)
+		}
+
 		activities = append(activities, activity)
+		log.Info(">>>>>>>>>>>>>>>>>>>>>length", len(activities))
 	}
 	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.tasks[]", activities)
 	return activities

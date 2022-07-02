@@ -1,0 +1,170 @@
+{
+    "extra": [
+        {
+            "Name": "App.Replicas",
+            "Value": "3"
+        },
+        {
+            "Name": "App.LogLevel",
+            "Value": "DEBUG"
+        }
+    ],
+    "logic": [
+        {
+            "name": "Pipe.MQTT_FS",
+            "properties": [
+                {
+                    "Name": "MQTTPub.Topic",
+                    "Value": "EdgexGatewayData"
+                },
+                {
+                    "Name": "MQTTPub.MaximumQOS",
+                    "Value": "2"
+                },
+                {
+                    "Name": "MQTTPub.EncodeReadingValue",
+                    "Value": "true"
+                },
+                {
+                    "Name": "Mqtt.IoTMQTT.Broker_URL",
+                    "Value": "tcp://173.52.215.168:1883"
+                },
+                {
+                    "Name": "Mqtt.IoTMQTT.Username",
+                    "Value": "mqtt_admin"
+                },
+                {
+                    "Name": "Mqtt.IoTMQTT.Password",
+                    "Value": "SECRET:bXF0dF9hZG1pbg=="
+                },
+                {
+                    "Name": "Mqtt.encryptionMode",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Mqtt.caCertificate",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Mqtt.clientCertificate",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Mqtt.clientKey",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Logging.LogLevel",
+                    "Value": "INFO"
+                }
+            ]
+        },
+        {
+            "name": "Pipe.MQTT_FS",
+            "properties": [
+                {
+                    "Name": "MQTTPub.Topic",
+                    "Value": "EdgexGatewayData2"
+                },
+                {
+                    "Name": "MQTTPub.MaximumQOS",
+                    "Value": "2"
+                },
+                {
+                    "Name": "Mqtt.IoTMQTT.Broker_URL",
+                    "Value": "tcp://173.52.215.168:1883"
+                },
+                {
+                    "Name": "Mqtt.IoTMQTT.Username",
+                    "Value": "mqtt_admin"
+                },
+                {
+                    "Name": "Mqtt.IoTMQTT.Password",
+                    "Value": "SECRET:bXF0dF9hZG1pbg=="
+                },
+                {
+                    "Name": "Mqtt.encryptionMode",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Mqtt.caCertificate",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Mqtt.clientCertificate",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Mqtt.clientKey",
+                    "Value": "changeme"
+                },
+                {
+                    "Name": "Logging.LogLevel",
+                    "Value": "INFO"
+                }
+            ]
+        },
+        {
+            "name": "Filter.Dummy",
+            "properties": [
+                {
+                    "Name": "Logging.LogLevel",
+                    "Value": "INFO"
+                }
+            ]
+        }
+    ],
+    "source": {
+        "name": "DataSource.EDGEX_MQTT",
+        "properties": [
+            {
+                "Name": "Data.Gateway",
+                "Value": "MacWork_HomeDevices"
+            },
+            {
+                "Name": "Data.DecodePayload",
+                "Value": "true"
+            },
+            {
+                "Name": "MQTTTrigger.Topic",
+                "Value": "edgexevents"
+            },
+            {
+                "Name": "MQTTTrigger.MaximumQOS",
+                "Value": "2"
+            },
+            {
+                "Name": "Mqtt.IoTMQTT.Broker_URL",
+                "Value": "tcp://173.52.215.168:1883"
+            },
+            {
+                "Name": "Mqtt.IoTMQTT.Username",
+                "Value": ""
+            },
+            {
+                "Name": "Mqtt.IoTMQTT.Password",
+                "Value": "SECRET:"
+            },
+            {
+                "Name": "Mqtt.encryptionMode",
+                "Value": "changeme"
+            },
+            {
+                "Name": "Mqtt.caCertificate",
+                "Value": "changeme"
+            },
+            {
+                "Name": "Mqtt.clientCertificate",
+                "Value": "changeme"
+            },
+            {
+                "Name": "Mqtt.clientKey",
+                "Value": "changeme"
+            },
+            {
+                "Name": "Logging.LogLevel",
+                "Value": "INFO"
+            }
+        ]
+    }
+}
