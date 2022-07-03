@@ -18,7 +18,7 @@ func TestBuildTemplates(t *testing.T) {
 
 	applicationPipelineDescriptor, _ := FromFile(fmt.Sprintf("./%s.json", appname))
 
-	descriptorString, _, _, _, err := BuildFlogoApp(
+	descriptorString, _, _, _, _, err := BuildFlogoApp(
 		templateLibrary,
 		"test_pipeline",
 		applicationPipelineDescriptor,
