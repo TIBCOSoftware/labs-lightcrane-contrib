@@ -254,14 +254,14 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	        Construct Pipeline
 	**********************************/
 
-	descriptorString, runner, ports, replicas, err := model.BuildFlogoApp(
+	descriptorString, pipeline, runner, ports, replicas, err := model.BuildFlogoApp(
 		a.template,
 		applicationName,
 		applicationPipelineDescriptor,
-		a.variables,
 		gProperties,
 	)
 
+	descriptor := make(map[string]interface{})
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
 
 	/*********************************
@@ -302,7 +302,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 
 	switch serviceType {
 	case "k8s":
-		descriptor[oF1Properties], err = a.createK8sF1Properties(
+		descriptor[oF1Properties], err = createK8sF1Properties(
 			log,
 			a.pathMapper,
 			variable,
@@ -313,7 +313,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 			replicas,
 		)
 	default:
-		descriptor[oF1Properties], err = a.createDockerF1Properties(
+		descriptor[oF1Properties], err = createDockerF1Properties(
 			log,
 			a.pathMapper,
 			variable,
@@ -342,29 +342,7 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	return true, nil
 }
 
-func parseName(fullname string) (string, string) {
-	category := fullname[:strings.Index(fullname, ".")]
-	name := fullname[strings.Index(fullname, ".")+1:]
-	return category, name
-}
-
-func extractProperties(log log.Logger, logicObj map[string]interface{}) []interface{} {
-	log.Info("[PipelineBuilderActivity2:extractProperties]  logicObj : ", logicObj)
-	appProperties := make([]interface{}, 0)
-	if nil != logicObj[iProperties] {
-		for _, property := range logicObj[iProperties].([]interface{}) {
-			log.Info("[PipelineBuilderActivity2:extractProperties]  Name : ", util.GetPropertyElement("Name", property))
-			appProperties = append(appProperties, map[string]interface{}{
-				"Name":  util.GetPropertyElement("Name", property),
-				"Value": util.GetPropertyElement("Value", property),
-				"Type":  util.GetPropertyElement("Type", property),
-			})
-		}
-	}
-	return appProperties
-}
-
-func (a *Activity) createDockerF1Properties(
+func createDockerF1Properties(
 	log log.Logger,
 	pathMapper *kwr.KeywordMapper,
 	variable map[string]interface{},
@@ -425,7 +403,7 @@ func (a *Activity) createDockerF1Properties(
 	return description, nil
 }
 
-func (a *Activity) createK8sF1Properties(
+func createK8sF1Properties(
 	log log.Logger,
 	pathMapper *kwr.KeywordMapper,
 	variable map[string]interface{},

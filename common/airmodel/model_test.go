@@ -22,7 +22,6 @@ func TestBuildTemplates(t *testing.T) {
 		templateLibrary,
 		"test_pipeline",
 		applicationPipelineDescriptor,
-		map[string]interface{}{},
 		[]interface{}{},
 	)
 	//	fmt.Println("descriptorString ====", descriptorString)
