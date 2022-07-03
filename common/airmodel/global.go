@@ -26,7 +26,6 @@ func BuildFlogoApp(
 	template *FlogoTemplateLibrary,
 	applicationName string,
 	applicationPipelineDescriptor map[string]interface{},
-	variable map[string]interface{},
 	gProperties []interface{},
 ) (descriptorString string, runner interface{}, ports []interface{}, replicas int, err error) {
 
@@ -42,8 +41,6 @@ func BuildFlogoApp(
 		return "", nil, nil, -1, errors.New("Invalid Application Pipeline Descriptor ... ")
 	}
 	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Descriptor : ", applicationPipelineDescriptor)
-
-	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Variable : ", variable)
 
 	/*********************************
 	        Construct Pipeline
