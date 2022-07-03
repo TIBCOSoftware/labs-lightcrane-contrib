@@ -103,10 +103,10 @@ func (this DataSource) BuildActivities(subflowID string) []interface{} {
 				subflowActivity := util.DeepCopy(this.subflowActivity).(map[string]interface{})
 				_ = objectbuilder.SetObject(subflowActivity, "root.id", branchId)
 				_ = objectbuilder.SetObject(subflowActivity, "root.name", branchId)
-				_ = objectbuilder.SetObject(subflowActivity, "root.settings.iterate", "=$activity[NewFlowData].Data.readings")
-				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.gateway", "=$activity[NewFlowData].Data.gateway")
+				_ = objectbuilder.SetObject(subflowActivity, "root.settings.iterate", fmt.Sprintf("=$activity[%s].Data.readings", previousActivityId))
+				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.gateway", fmt.Sprintf("=$activity[%s].Data.gateway", previousActivityId))
 				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.reading", "=$iteration[value]")
-				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.enriched", "=$activity[NewFlowData].Data.enriched")
+				_ = objectbuilder.SetObject(subflowActivity, "root.activity.input.enriched", fmt.Sprintf("=$activity[%s].Data.enriched", previousActivityId))
 				_ = objectbuilder.SetObject(subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
 				activities = append(activities, subflowActivity)
 			}
