@@ -59,9 +59,9 @@ func (this DataSource) addNamespace4Properties(ID string) {
 
 func (this DataSource) Build(subflowID string) {
 
+	activities := this.BuildActivities(subflowID)
 	links := objectbuilder.LocateObject(this.data, "root.resources[0].data.links[]").([]interface{})
 	if 0 == len(links) {
-		activities := this.BuildActivities(subflowID)
 		for index, _ := range activities {
 			if 0 != index {
 				links = append(links, map[string]interface{}{
@@ -76,6 +76,7 @@ func (this DataSource) Build(subflowID string) {
 		_ = objectbuilder.SetObject(this.data, "root.resources[0].data.links[]", links)
 	}
 
+	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.tasks[]", activities)
 	_ = objectbuilder.SetObject(
 		this.data, "root.resources[0].data.tasks[0].activity.input.message",
 		fmt.Sprintf("=string.concat(\"########## DataSource ##########\", coerce.toString($flow.data))"))
@@ -118,7 +119,6 @@ func (this DataSource) BuildActivities(subflowID string) []interface{} {
 		activities = append(activities, activity)
 		log.Info(">>>>>>>>>>>>>>>>>>>>>length", len(activities))
 	}
-	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.tasks[]", activities)
 	return activities
 }
 
