@@ -59,30 +59,26 @@ func (this DataSource) addNamespace4Properties(ID string) {
 
 func (this DataSource) Build(subflowID string) {
 
-	links := make([]interface{}, 0)
-	//activities := make([]interface{}, 3)
-	//activities[0] = this.defaultActivities[0]
-	//activities[1] = this.subflowActivity
-	//activities[2] = this.defaultActivities[1]
-	activities := this.BuildActivities(subflowID)
-	for index, _ := range activities {
-		if 0 != index {
-			links = append(links, map[string]interface{}{
-				"id":   index,
-				"from": activities[index-1].(map[string]interface{})["id"],
-				"to":   activities[index].(map[string]interface{})["id"],
-				"type": "default",
-			})
+	links := objectbuilder.LocateObject(this.data, "root.resources[0].data.links[]").([]interface{})
+	if 0 == len(links) {
+		activities := this.BuildActivities(subflowID)
+		for index, _ := range activities {
+			if 0 != index {
+				links = append(links, map[string]interface{}{
+					"id":   index,
+					"from": activities[index-1].(map[string]interface{})["id"],
+					"to":   activities[index].(map[string]interface{})["id"],
+					"type": "default",
+				})
+			}
 		}
+		log.Debug(">>>>>>>>>> links >>>>>>>>>>>>> links = ", links)
+		_ = objectbuilder.SetObject(this.data, "root.resources[0].data.links[]", links)
 	}
-	log.Debug(">>>>>>>>>> links >>>>>>>>>>>>> links = ", links)
+
 	_ = objectbuilder.SetObject(
 		this.data, "root.resources[0].data.tasks[0].activity.input.message",
 		fmt.Sprintf("=string.concat(\"########## DataSource ##########\", coerce.toString($flow.data))"))
-	//_ = objectbuilder.SetObject(this.subflowActivity, "root.activity.settings.flowURI", fmt.Sprintf("res://flow:%s", subflowID))
-	_ = objectbuilder.SetObject(this.data, "root.resources[0].data.links[]", links)
-	//_ = objectbuilder.SetObject(this.data, "root.resources[0].data.tasks[]", activities)
-
 	this.addNamespace4Properties(this.category)
 }
 
