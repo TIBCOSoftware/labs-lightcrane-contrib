@@ -27,18 +27,18 @@ func BuildFlogoApp(
 	applicationName string,
 	applicationPipelineDescriptor map[string]interface{},
 	gProperties []interface{},
-) (descriptorString string, runner interface{}, ports []interface{}, replicas int, err error) {
+) (descriptorString string, pipeline Pipeline, runner interface{}, ports []interface{}, replicas int, err error) {
 
 	log.Info("[PipelineBuilderActivity2:Eval] entering ........ ")
 	defer log.Info("[PipelineBuilderActivity2:Eval] Exit ........ ")
 
 	if "" == applicationName {
-		return "", nil, nil, -1, errors.New("Invalid Application Name ... ")
+		return "", Pipeline{}, nil, nil, -1, errors.New("Invalid Application Name ... ")
 	}
 	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", applicationName)
 
 	if nil == applicationPipelineDescriptor {
-		return "", nil, nil, -1, errors.New("Invalid Application Pipeline Descriptor ... ")
+		return "", Pipeline{}, nil, nil, -1, errors.New("Invalid Application Pipeline Descriptor ... ")
 	}
 	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Descriptor : ", applicationPipelineDescriptor)
 
@@ -47,7 +47,7 @@ func BuildFlogoApp(
 	**********************************/
 
 	/* Create a new pipeline */
-	pipeline := template.GetPipeline()
+	pipeline = template.GetPipeline()
 
 	/* Declare notification listener */
 	notificationListeners := map[string]interface{}{
@@ -175,7 +175,7 @@ func BuildFlogoApp(
 
 	descriptorString, err = pipeline.Build()
 
-	return descriptorString, runner, ports, replicas, err
+	return descriptorString, pipeline, runner, ports, replicas, err
 }
 
 func parseName(fullname string) (string, string) {
