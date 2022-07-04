@@ -240,10 +240,11 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		return false, errors.New("Invalid Project Folder ... ")
 	}
 	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", projectFolder)
+	log.Info("[PipelineBuilderActivity2:Eval]  config file : ", fmt.Sprintf("%s/config.json", projectFolder))
 
-	config, err := model.FromFile(fmt.Sprintf("%s/artifacts/config.json", projectFolder))
+	config, err := model.FromFile(fmt.Sprintf("%s/config.json", projectFolder))
 	if nil != err {
-		log.Warn("[PipelineBuilderActivity2:Eval] config.json can not be loaded !")
+		log.Warn("[PipelineBuilderActivity2:Eval] config.json can not be loaded : ", err.Error())
 	}
 
 	applicationName := input.ApplicationName
