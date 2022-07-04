@@ -60,6 +60,7 @@ type Settings struct {
 }
 
 type Input struct {
+	ProjectFolder                 string                 `md:"ProjectFolder"`
 	ApplicationName               string                 `md:"ApplicationName"`
 	ApplicationPipelineDescriptor map[string]interface{} `md:"AirDescriptor"`
 	ServiceType                   string                 `md:"ServiceType"`
@@ -76,6 +77,7 @@ type Output struct {
 
 func (i *Input) ToMap() map[string]interface{} {
 	return map[string]interface{}{
+		"ProjectFolder":   i.ProjectFolder,
 		"ApplicationName": i.ApplicationName,
 		"AirDescriptor":   i.ApplicationPipelineDescriptor,
 		"ServiceType":     i.ServiceType,
@@ -86,6 +88,10 @@ func (i *Input) ToMap() map[string]interface{} {
 
 func (i *Input) FromMap(values map[string]interface{}) error {
 	ok := true
+	i.ProjectFolder, ok = values["ProjectFolder"].(string)
+	if !ok {
+		return errors.New("Illegal ProjectFolder type, expect string.")
+	}
 	i.ApplicationName, ok = values["ApplicationName"].(string)
 	if !ok {
 		return errors.New("Illegal ApplicationName type, expect string.")
@@ -229,6 +235,17 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 
 	gProperties := util.DeepCopy(a.gProperties).([]interface{})
 
+	projectFolder := input.ProjectFolder
+	if "" == projectFolder {
+		return false, errors.New("Invalid Project Folder ... ")
+	}
+	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", projectFolder)
+
+	config, err := model.FromFile(fmt.Sprintf("%s/artifacts/config.json", projectFolder))
+	if nil != err {
+		log.Warn("[PipelineBuilderActivity2:Eval] config.json can not be loaded !")
+	}
+
 	applicationName := input.ApplicationName
 	if "" == applicationName {
 		return false, errors.New("Invalid Application Name ... ")
@@ -260,6 +277,12 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		applicationPipelineDescriptor,
 		gProperties,
 	)
+
+	//	replicas := 1
+	if nil != config["replicas"] {
+		replicas = config["replicas"].(int)
+		log.Info("[PipelineBuilderActivity2:Eval] replicas found in config.json. ")
+	}
 
 	descriptor := make(map[string]interface{})
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
