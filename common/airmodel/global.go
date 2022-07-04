@@ -11,7 +11,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
+
+	//	"strconv"
 	"strings"
 
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
@@ -27,6 +28,7 @@ func BuildFlogoApp(
 	applicationName string,
 	applicationPipelineDescriptor map[string]interface{},
 	gProperties []interface{},
+	config map[string]interface{},
 ) (descriptorString string, pipeline Pipeline, runner interface{}, ports []interface{}, replicas int, err error) {
 
 	log.Info("[PipelineBuilderActivity2:Eval] entering ........ ")
@@ -74,6 +76,9 @@ func BuildFlogoApp(
 	/* Adding logics and find a runner*/
 	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
 	replicas = 1
+	if nil != config["replicas"] {
+		replicas = int(config["replicas"].(float64))
+	}
 	for key, value := range applicationPipelineDescriptor {
 		switch key {
 		case "logic":
@@ -164,9 +169,17 @@ func BuildFlogoApp(
 							}
 						}
 					}
-				} else if "App.Replicas" == name {
-					replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
-				}
+				} // else if "App.Replicas" == name {
+				//	replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
+				//}
+			}
+			configByte, err := json.Marshal(config)
+			if nil == err {
+				extraArray = append(extraArray, map[string]interface{}{
+					"Name":  "App.Config",
+					"Value": string(configByte),
+					"Type":  "string",
+				})
 			}
 		}
 	}

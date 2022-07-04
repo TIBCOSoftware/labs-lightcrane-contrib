@@ -277,13 +277,8 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		applicationName,
 		applicationPipelineDescriptor,
 		gProperties,
+		config,
 	)
-
-	//	replicas := 1
-	if nil != config["replicas"] {
-		replicas = config["replicas"].(int)
-		log.Info("[PipelineBuilderActivity2:Eval] replicas found in config.json. ")
-	}
 
 	descriptor := make(map[string]interface{})
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
