@@ -117,7 +117,6 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table
 				return nil, nil, activity.NewError("(getTable)Unable extract table details", "TABLE_QUERY-4001", nil)
 			}
 
-			tabletype := table.IN_MEMORY
 			propertiesArray := []interface{}{}
 			var tablename string
 			var schema []interface{}
@@ -143,10 +142,6 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table
 								if nil != err {
 									return nil, nil, err
 								}
-							}
-						} else if setting["name"] == "type" {
-							if nil != setting["value"] {
-								tabletype = setting["value"].(string)
 							}
 						} else if setting["name"] == "name" {
 							tablename = setting["value"].(string)
@@ -181,6 +176,7 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table
 				}
 			}
 
+			properties["tableType"] = table.IN_MEMORY
 			for _, field := range propertiesArray {
 				properties[field.(map[string]interface{})["Name"].(string)] = field.(map[string]interface{})["Value"]
 			}
@@ -190,7 +186,6 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table
 				tableSchema := table.CreateSchema(&schemaArray)
 				properties["pKey"] = keyName
 				properties["indices"] = indexible
-				properties["tableType"] = tabletype
 				properties["tablename"] = tablename
 				properties["tableSchema"] = tableSchema
 				myTable = table.GetTableManager().CreateTable(properties)
