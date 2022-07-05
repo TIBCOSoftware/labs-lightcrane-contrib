@@ -79,111 +79,108 @@ func BuildFlogoApp(
 	if nil != config["replicas"] {
 		replicas = int(config["replicas"].(float64))
 	}
-	for key, value := range applicationPipelineDescriptor {
-		switch key {
-		case "logic":
-			logicArray := value.([]interface{})
-			normalFlow := make([]interface{}, 0)
-			errorFlow := make([]interface{}, 0)
 
-			isEventFlow := true
-			for _, logic := range logicArray {
-				logicObj := logic.(map[string]interface{})
-				category, _ := parseName(logicObj["name"].(string))
+	if nil != applicationPipelineDescriptor["logic"] {
+		logicArray := applicationPipelineDescriptor["logic"].([]interface{})
+		normalFlow := make([]interface{}, 0)
+		errorFlow := make([]interface{}, 0)
 
-				if "Error" == category {
-					isEventFlow = false
-				}
+		isEventFlow := true
+		for _, logic := range logicArray {
+			logicObj := logic.(map[string]interface{})
+			category, _ := parseName(logicObj["name"].(string))
 
-				if isEventFlow {
-					normalFlow = append(normalFlow, logic)
-				} else {
-					errorFlow = append(errorFlow, logic)
-				}
+			if "Error" == category {
+				isEventFlow = false
 			}
 
-			logicSN := 0
-			for _, logic := range normalFlow {
-				logicObj := logic.(map[string]interface{})
-				category, name := parseName(logicObj["name"].(string))
-				logic := template.GetComponent(logicSN, category, name, extractProperties(logicObj)).(Logic)
-				pipeline.AddNormalLogic(logic)
-
-				if nil != logic.GetRunner() {
-					runner = logic.GetRunner()
-				}
-
-				/* Add notifier for the cmponent which generate notification. */
-				if nil != logic.GetNotificationBroker() {
-					/* Add Notifier */
-					brokerCategory, brokerName := parseName(logic.GetNotificationBroker().(string))
-					notifier := template.GetComponent(logicSN, brokerCategory, brokerName, nil).(Notifier)
-					pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, logicSN), notifier)
-				}
-				logicSN++
-			}
-
-			pipeline.AddNormalLogic(template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(Logic))
-			logicSN++
-
-			notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("Error_%d", logicSN))
-			if 0 != len(errorFlow) {
-				for _, logic := range errorFlow {
-					logicObj := logic.(map[string]interface{})
-					category, name := parseName(logicObj["name"].(string))
-					pipeline.AddErrorLogic(template.GetComponent(logicSN, category, name, extractProperties(logicObj)).(Logic))
-					logicSN++
-				}
-				pipeline.AddErrorLogic(template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(Logic))
+			if isEventFlow {
+				normalFlow = append(normalFlow, logic)
 			} else {
-				pipeline.AddErrorLogic(template.GetComponent(logicSN, "Error", "Default", []interface{}{}).(Logic))
-			}
-
-			log.Info("[PipelineBuilderActivity2:Eval] Defalut listener for ErrorHandler : ", notificationListeners)
-
-		case "extra":
-			if nil == value {
-				continue
-			}
-			extraArray := value.([]interface{})
-			for _, property := range extraArray {
-				name := util.GetPropertyElement("Name", property).(string)
-				if !strings.HasPrefix(name, "App.") {
-					gProperties = append(gProperties, map[string]interface{}{
-						"Name":  name,
-						"Value": util.GetPropertyElement("Value", property),
-						"Type":  util.GetPropertyElement("Type", property),
-					})
-				} else if "App.NotificationListeners" == name {
-					/* Get notification listeners from request */
-					var listeners map[string]interface{}
-					json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-					log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
-					/* Merge listeners */
-					for key, value := range listeners {
-						if nil == notificationListeners[key] {
-							notificationListeners[key] = value
-						} else {
-							for _, name := range value.([]interface{}) {
-								notificationListeners[key] = append(notificationListeners[key].([]interface{}), name)
-							}
-						}
-					}
-				} // else if "App.Replicas" == name {
-				//	replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
-				//}
-			}
-			configByte, err := json.Marshal(config)
-			if nil == err {
-				extraArray = append(extraArray, map[string]interface{}{
-					"Name":  "App.Config",
-					"Value": string(configByte),
-					"Type":  "string",
-				})
+				errorFlow = append(errorFlow, logic)
 			}
 		}
+
+		logicSN := 0
+		for _, logic := range normalFlow {
+			logicObj := logic.(map[string]interface{})
+			category, name := parseName(logicObj["name"].(string))
+			logic := template.GetComponent(logicSN, category, name, extractProperties(logicObj)).(Logic)
+			pipeline.AddNormalLogic(logic)
+
+			if nil != logic.GetRunner() {
+				runner = logic.GetRunner()
+			}
+
+			/* Add notifier for the cmponent which generate notification. */
+			if nil != logic.GetNotificationBroker() {
+				/* Add Notifier */
+				brokerCategory, brokerName := parseName(logic.GetNotificationBroker().(string))
+				notifier := template.GetComponent(logicSN, brokerCategory, brokerName, nil).(Notifier)
+				pipeline.AddNotifier(fmt.Sprintf("%s_%d", category, logicSN), notifier)
+			}
+			logicSN++
+		}
+
+		pipeline.AddNormalLogic(template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(Logic))
+		logicSN++
+
+		notificationListeners["ErrorHandler"] = append(notificationListeners["ErrorHandler"].([]interface{}), fmt.Sprintf("Error_%d", logicSN))
+		if 0 != len(errorFlow) {
+			for _, logic := range errorFlow {
+				logicObj := logic.(map[string]interface{})
+				category, name := parseName(logicObj["name"].(string))
+				pipeline.AddErrorLogic(template.GetComponent(logicSN, category, name, extractProperties(logicObj)).(Logic))
+				logicSN++
+			}
+			pipeline.AddErrorLogic(template.GetComponent(logicSN, "Endcap", "Dummy", []interface{}{}).(Logic))
+		} else {
+			pipeline.AddErrorLogic(template.GetComponent(logicSN, "Error", "Default", []interface{}{}).(Logic))
+		}
 	}
+
+	if nil != applicationPipelineDescriptor["extra"] {
+		extraArray := applicationPipelineDescriptor["extra"].([]interface{})
+		for _, property := range extraArray {
+			name := util.GetPropertyElement("Name", property).(string)
+			if !strings.HasPrefix(name, "App.") {
+				gProperties = append(gProperties, map[string]interface{}{
+					"Name":  name,
+					"Value": util.GetPropertyElement("Value", property),
+					"Type":  util.GetPropertyElement("Type", property),
+				})
+			} else if "App.NotificationListeners" == name {
+				/* Get notification listeners from request */
+				var listeners map[string]interface{}
+				json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
+				log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
+				/* Merge listeners */
+				for key, value := range listeners {
+					if nil == notificationListeners[key] {
+						notificationListeners[key] = value
+					} else {
+						for _, name := range value.([]interface{}) {
+							notificationListeners[key] = append(notificationListeners[key].([]interface{}), name)
+						}
+					}
+				}
+			} // else if "App.Replicas" == name {
+			//	replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
+			//}
+		}
+
+		configByte, err := json.Marshal(config)
+		if nil == err {
+			applicationPipelineDescriptor["extra"] = append(extraArray, map[string]interface{}{
+				"Name":  "App.Config",
+				"Value": string(configByte),
+				"Type":  "string",
+			})
+		}
+	}
+
 	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
+
 	pipeline.SetListeners(notificationListeners)
 
 	descriptorString, err = pipeline.Build()
