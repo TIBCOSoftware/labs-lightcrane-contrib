@@ -168,10 +168,16 @@ func BuildFlogoApp(
 			//	replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
 			//}
 		}
+	}
 
+	if nil != applicationPipelineDescriptor["properties"] {
+		propertiesArray := applicationPipelineDescriptor["properties"].([]interface{})
+		for index, property := range propertiesArray {
+			log.Info("[PipelineBuilderActivity2:Eval] applicationPipelineDescriptor[\"properties\"] : index = ", index, ", property = ", property)
+		}
 		configByte, err := json.Marshal(config)
 		if nil == err {
-			applicationPipelineDescriptor["extra"] = append(extraArray, map[string]interface{}{
+			applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
 				"Name":  "App.Config",
 				"Value": string(configByte),
 				"Type":  "string",

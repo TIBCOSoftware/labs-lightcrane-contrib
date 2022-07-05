@@ -17,6 +17,13 @@ func TestBuildTemplates(t *testing.T) {
 	appname := "air_description_sample01"
 
 	applicationPipelineDescriptor, _ := FromFile(fmt.Sprintf("./%s.json", appname))
+	applicationPipelineDescriptor["properties"] = []interface{}{
+		map[string]interface{}{
+			"Name":  "FLOGO_APP_PROPS_ENV",
+			"Value": "auto",
+		},
+	}
+	fmt.Println("applicationPipelineDescriptor before ====", applicationPipelineDescriptor)
 
 	descriptorString, _, _, _, _, err := BuildFlogoApp(
 		templateLibrary,
@@ -31,7 +38,7 @@ func TestBuildTemplates(t *testing.T) {
 			},
 		},
 	)
-	fmt.Println("applicationPipelineDescriptor ====", applicationPipelineDescriptor)
+	fmt.Println("applicationPipelineDescriptor after ====", applicationPipelineDescriptor)
 	fmt.Println("err ====", err)
 
 	_ = ioutil.WriteFile(fmt.Sprintf("./%s_flogo.json", appname), []byte(descriptorString), 0644)
