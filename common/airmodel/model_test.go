@@ -23,8 +23,15 @@ func TestBuildTemplates(t *testing.T) {
 		"test_pipeline",
 		applicationPipelineDescriptor,
 		[]interface{}{},
+		map[string]interface{}{
+			"HA": map[string]interface{}{
+				"controllerType":       "InMemory",
+				"controllerProperties": map[string]interface{}{},
+				"replicas":             3,
+			},
+		},
 	)
-	//	fmt.Println("descriptorString ====", descriptorString)
+	fmt.Println("applicationPipelineDescriptor ====", applicationPipelineDescriptor)
 	fmt.Println("err ====", err)
 
 	_ = ioutil.WriteFile(fmt.Sprintf("./%s_flogo.json", appname), []byte(descriptorString), 0644)
