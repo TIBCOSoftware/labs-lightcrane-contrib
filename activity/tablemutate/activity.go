@@ -120,7 +120,6 @@ func (a *TableMutateActivity) getTable(context activity.Context) (table.Table, e
 				return nil, activity.NewError("(getTable)Unable extract table details", "TABLE_MUTATE-4001", nil)
 			}
 
-			tabletype := table.IN_MEMORY
 			propertiesArray := []interface{}{}
 			var tablename string
 			var schema []interface{}
@@ -146,10 +145,6 @@ func (a *TableMutateActivity) getTable(context activity.Context) (table.Table, e
 								if nil != err {
 									return nil, err
 								}
-							}
-						} else if setting["name"] == "type" {
-							if nil != setting["value"] {
-								tabletype = setting["value"].(string)
 							}
 						} else if setting["name"] == "name" {
 							tablename = setting["value"].(string)
@@ -184,6 +179,7 @@ func (a *TableMutateActivity) getTable(context activity.Context) (table.Table, e
 				}
 			}
 
+			properties["tableType"] = table.IN_MEMORY
 			for _, field := range propertiesArray {
 				properties[field.(map[string]interface{})["Name"].(string)] = field.(map[string]interface{})["Value"]
 			}
@@ -193,7 +189,6 @@ func (a *TableMutateActivity) getTable(context activity.Context) (table.Table, e
 				tableSchema := table.CreateSchema(&schemaArray)
 				properties["pKey"] = keyName
 				properties["indices"] = indexible
-				properties["tableType"] = tabletype
 				properties["tablename"] = tablename
 				properties["tableSchema"] = tableSchema
 				myTable = table.GetTableManager().CreateTable(properties)

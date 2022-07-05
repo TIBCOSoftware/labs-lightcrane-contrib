@@ -12,7 +12,7 @@ import (
 	"errors"
 	"fmt"
 
-	//	"strconv"
+	"strconv"
 	"strings"
 
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/util"
@@ -182,6 +182,21 @@ func BuildFlogoApp(
 				"Value": string(configByte),
 				"Type":  "string",
 			})
+
+			applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
+				"Name":  "App.HA.Replicas",
+				"Value": strconv.Itoa(int(config["HA"].(map[string]interface{})["replicas"].(float64))),
+				"Type":  "string",
+			})
+
+			controllerPropertiesByte, err := json.Marshal(config["HA"].(map[string]interface{})["controllerProperties"])
+			if nil == err {
+				applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
+					"Name":  "App.HA.Properties",
+					"Value": string(controllerPropertiesByte),
+					"Type":  "string",
+				})
+			}
 		}
 	}
 

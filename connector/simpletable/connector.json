@@ -23,15 +23,6 @@
 			}
     	},
 		{
-			"name": "type",
-			"type": "string",
-			"required": true,
-			"display": {
-				"name": "Table Type",
-				"description": "type of the table instance"
-			}
-    	},
-		{
 			"name": "description",
 			"type": "string",
 			"display": {
