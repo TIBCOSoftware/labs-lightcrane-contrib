@@ -40,7 +40,7 @@ type Activity struct {
 	tableMgr *simpletable.SimpletableManager
 }
 
-// NewActivity creates a new AppActivity
+// New creates a new AppActivity
 func New(ctx activity.InitContext) (activity.Activity, error) {
 	settings := &Settings{}
 	err := metadata.MapToStruct(ctx.Settings(), settings, true)
