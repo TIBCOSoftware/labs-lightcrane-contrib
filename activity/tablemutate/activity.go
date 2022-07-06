@@ -8,8 +8,8 @@ package tablemutate
 import (
 	"reflect"
 
-	"github.com/TIBCOSoftware/labs-air-contrib/connector/simpletable"
 	"github.com/TIBCOSoftware/labs-lightcrane-contrib/common/table"
+	"github.com/TIBCOSoftware/labs-lightcrane-contrib/connector/simpletable"
 	"github.com/project-flogo/core/activity"
 	"github.com/project-flogo/core/data/metadata"
 	logger "github.com/project-flogo/core/support/log"
