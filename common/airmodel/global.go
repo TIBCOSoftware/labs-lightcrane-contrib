@@ -31,18 +31,20 @@ func BuildFlogoApp(
 	config map[string]interface{},
 ) (descriptorString string, pipeline Pipeline, runner interface{}, ports []interface{}, replicas int, err error) {
 
-	log.Info("[PipelineBuilderActivity2:Eval] entering ........ ")
-	defer log.Info("[PipelineBuilderActivity2:Eval] Exit ........ ")
+	log.Info("[airmodel.BuildFlogoApp] entering ........ ")
+	defer log.Info("[airmodel.BuildFlogoApp] Exit ........ ")
 
 	if "" == applicationName {
 		return "", Pipeline{}, nil, nil, -1, errors.New("Invalid Application Name ... ")
 	}
-	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", applicationName)
+	log.Info("[airmodel.BuildFlogoApp]  Name : ", applicationName)
 
 	if nil == applicationPipelineDescriptor {
 		return "", Pipeline{}, nil, nil, -1, errors.New("Invalid Application Pipeline Descriptor ... ")
 	}
-	log.Info("[PipelineBuilderActivity2:Eval]  Pipeline Descriptor : ", applicationPipelineDescriptor)
+	log.Info("[airmodel.BuildFlogoApp]  Pipeline Descriptor : ", applicationPipelineDescriptor)
+
+	log.Info("[airmodel.BuildFlogoApp] config = ", config)
 
 	/*********************************
 	        Construct Pipeline
@@ -55,14 +57,14 @@ func BuildFlogoApp(
 	notificationListeners := map[string]interface{}{
 		"ErrorHandler": make([]interface{}, 0),
 	}
-	log.Info("[PipelineBuilderActivity2:Eval] Declare listener for ErrorHandler : ", notificationListeners)
+	log.Info("[airmodel.BuildFlogoApp] Declare listener for ErrorHandler : ", notificationListeners)
 
 	/* Add notifier for error handlers */
 	notifier := template.GetComponent(0, "Notifier", "Default", nil).(Notifier)
 	pipeline.AddNotifier("ErrorHandler", notifier)
 
 	/* Adding data source */
-	log.Info("[PipelineBuilderActivity2:Eval] Preparing datasource ......")
+	log.Info("[airmodel.BuildFlogoApp] Preparing datasource ......")
 	sourceObj := applicationPipelineDescriptor["source"].(map[string]interface{})
 	category, name := parseName(sourceObj["name"].(string))
 	dataSource := template.GetComponent(-1, category, name, extractProperties(sourceObj)).(DataSource)
@@ -74,7 +76,7 @@ func BuildFlogoApp(
 	}
 
 	/* Adding logics and find a runner*/
-	log.Info("[PipelineBuilderActivity2:Eval] Adding logics ......")
+	log.Info("[airmodel.BuildFlogoApp] Adding logics ......")
 	replicas = 1
 	if nil != config["replicas"] {
 		replicas = int(config["replicas"].(float64))
@@ -153,7 +155,7 @@ func BuildFlogoApp(
 				/* Get notification listeners from request */
 				var listeners map[string]interface{}
 				json.Unmarshal([]byte(util.GetPropertyElement("Value", property).(string)), &listeners)
-				log.Info("[PipelineBuilderActivity2:Eval] Notification listeners from request : ", listeners)
+				log.Info("[airmodel.BuildFlogoApp] Notification listeners from request : ", listeners)
 				/* Merge listeners */
 				for key, value := range listeners {
 					if nil == notificationListeners[key] {
@@ -173,7 +175,7 @@ func BuildFlogoApp(
 	if nil != applicationPipelineDescriptor["properties"] {
 		propertiesArray := applicationPipelineDescriptor["properties"].([]interface{})
 		for index, property := range propertiesArray {
-			log.Info("[PipelineBuilderActivity2:Eval] applicationPipelineDescriptor[\"properties\"] : index = ", index, ", property = ", property)
+			log.Info("[airmodel.BuildFlogoApp] applicationPipelineDescriptor[\"properties\"] : index = ", index, ", property = ", property)
 		}
 		configByte, err := json.Marshal(config)
 		if nil == err {
@@ -183,24 +185,28 @@ func BuildFlogoApp(
 				"Type":  "string",
 			})
 
-			applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
-				"Name":  "App.HA.Replicas",
-				"Value": strconv.Itoa(int(config["HA"].(map[string]interface{})["replicas"].(float64))),
-				"Type":  "string",
-			})
-
-			controllerPropertiesByte, err := json.Marshal(config["HA"].(map[string]interface{})["controllerProperties"])
-			if nil == err {
+			if nil != config["HA"] {
 				applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
-					"Name":  "App.HA.Properties",
-					"Value": string(controllerPropertiesByte),
+					"Name":  "App.HA.Replicas",
+					"Value": strconv.Itoa(int(config["HA"].(map[string]interface{})["replicas"].(float64))),
 					"Type":  "string",
 				})
+
+				controllerPropertiesByte, err := json.Marshal(config["HA"].(map[string]interface{})["controllerProperties"])
+				if nil == err {
+					applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
+						"Name":  "App.HA.Properties",
+						"Value": string(controllerPropertiesByte),
+						"Type":  "string",
+					})
+				}
+			} else {
+				log.Warnf("No HA setup in config.json")
 			}
 		}
 	}
 
-	log.Info("[PipelineBuilderActivity2:Eval]  NotificationListeners : ", notificationListeners)
+	log.Info("[airmodel.BuildFlogoApp]  NotificationListeners : ", notificationListeners)
 
 	pipeline.SetListeners(notificationListeners)
 
