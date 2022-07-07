@@ -7,7 +7,7 @@ import (
 
 type Settings struct {
 	Table  connection.Manager `md:"Table,required"`
-	Method string             `md:"cacheSize,required"`
+	Method string             `md:"Method,required"`
 }
 
 func (s *Settings) ToMap() map[string]interface{} {
