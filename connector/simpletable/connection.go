@@ -85,17 +85,13 @@ func (this *SimpletableFactory) Type() string {
 func (this *SimpletableFactory) NewManager(settings map[string]interface{}) (connection.Manager, error) {
 
 	s, err := NewSetting(settings)
-
 	if err != nil {
 		return nil, err
 	}
 
-	properties := s.ToMap()
-	log.Debug("properties : ", properties)
-
 	sharedConn := &SimpletableManager{
 		name:       s.Name,
-		properties: properties,
+		settings:   s,
 		connection: map[string]table.Table{},
 	}
 
@@ -106,11 +102,11 @@ func (this *SimpletableFactory) NewManager(settings map[string]interface{}) (con
 type SimpletableManager struct {
 	mux        sync.Mutex
 	name       string
-	properties map[string]interface{}
+	settings   *Settings
 	connection map[string]table.Table
 }
 
-func (this *SimpletableManager) Lookup(clientID string, properties map[string]interface{}) (table.Table, error) {
+func (this *SimpletableManager) Lookup(clientID string, config map[string]interface{}) (table.Table, error) {
 	var err error
 	if nil == this.connection[clientID] {
 		this.mux.Lock()
@@ -118,26 +114,22 @@ func (this *SimpletableManager) Lookup(clientID string, properties map[string]in
 		if nil == this.connection[clientID] {
 			log.Debug("(getTable) init : ", "initialize table begin ....")
 
-			propertiesArray := []interface{}{}
-			var tablename string
 			var schema []interface{}
-			iSchema := properties["schema"]
-			if nil == iSchema {
-				return nil, fmt.Errorf("(getTable)Unable to get schema string")
-			}
-			err := json.Unmarshal([]byte(iSchema.(string)), &schema)
+			err := json.Unmarshal([]byte(this.settings.Schema), &schema)
 			if nil != err {
 				return nil, err
 			}
-			iProperties := properties["properties"]
-			if nil != iProperties {
-				err := json.Unmarshal([]byte(iProperties.(string)), &propertiesArray)
+
+			propertiesArray := []interface{}{}
+			iProperties := this.settings.Properties
+			if "" != iProperties {
+				err := json.Unmarshal([]byte(iProperties), &propertiesArray)
 				if nil != err {
 					return nil, err
 				}
 			}
-			tablename = properties["name"].(string)
 
+			tablename := this.settings.Name
 			if "" == tablename {
 				return nil, fmt.Errorf("(getTable)Unable to get table name")
 			}
