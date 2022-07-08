@@ -222,7 +222,7 @@ func parseName(fullname string) (string, string) {
 }
 
 func extractProperties(logicObj map[string]interface{}) []interface{} {
-	log.Info("[PipelineBuilderActivity2:extractProperties]  logicObj : ", logicObj)
+	log.Info("[airmodel.extractProperties]  logicObj : ", logicObj)
 	appProperties := make([]interface{}, 0)
 	if nil != logicObj[iProperties] {
 		for _, property := range logicObj[iProperties].([]interface{}) {
