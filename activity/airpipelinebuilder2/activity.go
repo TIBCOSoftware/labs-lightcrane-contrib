@@ -27,6 +27,7 @@ package airpipelinebuilder2
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 
 	"fmt"
 	"strings"
@@ -242,7 +243,11 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	log.Info("[PipelineBuilderActivity2:Eval]  Name : ", projectFolder)
 	log.Info("[PipelineBuilderActivity2:Eval]  config file : ", fmt.Sprintf("%s/config.json", projectFolder))
 
-	config, err := model.FromFile(fmt.Sprintf("%s/config.json", projectFolder))
+	var config map[string]interface{}
+	fileContent, err := ioutil.ReadFile(fmt.Sprintf("%s/config.json", projectFolder))
+	if nil == err {
+		err = json.Unmarshal(fileContent, &config)
+	}
 	if nil != err {
 		log.Warn("[PipelineBuilderActivity2:Eval] config.json can not be loaded : ", err.Error())
 	}
