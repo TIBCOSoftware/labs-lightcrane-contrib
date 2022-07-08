@@ -120,10 +120,11 @@ func (this *SimpletableManager) Lookup(clientID string, config map[string]interf
 				return nil, err
 			}
 
-			propertiesArray := []interface{}{}
+			// {"tableType":"InMemory"}
+			var properties map[string]interface{}
 			iProperties := this.settings.Properties
 			if "" != iProperties {
-				err := json.Unmarshal([]byte(iProperties), &propertiesArray)
+				err := json.Unmarshal([]byte(iProperties), &properties)
 				if nil != err {
 					return nil, err
 				}
@@ -138,10 +139,9 @@ func (this *SimpletableManager) Lookup(clientID string, config map[string]interf
 			log.Debug(schema)
 			log.Debug("-===========================================-")
 			log.Debug("-============= TABLE PROPERTIES ================-")
-			log.Debug(propertiesArray)
+			log.Debug(properties)
 			log.Debug("-===============================================-")
 
-			properties := make(map[string]interface{})
 			keyName := make([]string, 0)
 			indexible := make([]string, 0)
 			schemaArray := make([](map[string]interface{}), len(schema))
@@ -156,9 +156,8 @@ func (this *SimpletableManager) Lookup(clientID string, config map[string]interf
 				}
 			}
 
-			properties["tableType"] = table.IN_MEMORY
-			for _, field := range propertiesArray {
-				properties[field.(map[string]interface{})["Name"].(string)] = field.(map[string]interface{})["Value"]
+			if nil == properties["tableType"] {
+				properties["tableType"] = table.IN_MEMORY
 			}
 
 			myTable := table.GetTableManager().GetTable(tablename)
