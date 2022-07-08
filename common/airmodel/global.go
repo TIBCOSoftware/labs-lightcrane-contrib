@@ -77,10 +77,6 @@ func BuildFlogoApp(
 
 	/* Adding logics and find a runner*/
 	log.Info("[airmodel.BuildFlogoApp] Adding logics ......")
-	replicas = 1
-	if nil != config["replicas"] {
-		replicas = int(config["replicas"].(float64))
-	}
 
 	if nil != applicationPipelineDescriptor["logic"] {
 		logicArray := applicationPipelineDescriptor["logic"].([]interface{})
@@ -172,29 +168,30 @@ func BuildFlogoApp(
 		}
 	}
 
+	replicas = 1
 	if nil != applicationPipelineDescriptor["properties"] {
-		propertiesArray := applicationPipelineDescriptor["properties"].([]interface{})
-		for index, property := range propertiesArray {
-			log.Info("[airmodel.BuildFlogoApp] applicationPipelineDescriptor[\"properties\"] : index = ", index, ", property = ", property)
-		}
 		configByte, err := json.Marshal(config)
 		if nil == err {
-			applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
+			applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
 				"Name":  "App.Config",
 				"Value": string(configByte),
 				"Type":  "string",
 			})
 
 			if nil != config["HA"] {
-				applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
-					"Name":  "App.HA.Replicas",
-					"Value": strconv.Itoa(int(config["HA"].(map[string]interface{})["replicas"].(float64))),
-					"Type":  "string",
-				})
+				ha, ok := config["HA"].(map[string]interface{})
+				if ok && nil != ha["replicas"] {
+					replicas = int(ha["replicas"].(float64))
+					applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
+						"Name":  "App.HA.Replicas",
+						"Value": strconv.Itoa(replicas),
+						"Type":  "string",
+					})
+				}
 
-				controllerPropertiesByte, err := json.Marshal(config["HA"].(map[string]interface{})["controllerProperties"])
+				controllerPropertiesByte, err := json.Marshal(ha["controllerProperties"])
 				if nil == err {
-					applicationPipelineDescriptor["properties"] = append(propertiesArray, map[string]interface{}{
+					applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
 						"Name":  "App.HA.Properties",
 						"Value": string(controllerPropertiesByte),
 						"Type":  "string",
