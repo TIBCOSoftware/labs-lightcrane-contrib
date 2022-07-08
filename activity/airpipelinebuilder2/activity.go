@@ -247,6 +247,8 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 		log.Warn("[PipelineBuilderActivity2:Eval] config.json can not be loaded : ", err.Error())
 	}
 
+	log.Info("[PipelineBuilderActivity2:Eval] config = ", config)
+
 	applicationName := input.ApplicationName
 	if "" == applicationName {
 		return false, errors.New("Invalid Application Name ... ")
