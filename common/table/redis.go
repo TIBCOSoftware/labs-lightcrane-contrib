@@ -19,7 +19,7 @@ func NewRedis(properties map[string]interface{}) *Redis {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     properties["Addr"].(string),
 		Password: properties["Password"].(string),
-		DB:       properties["DB"].(int),
+		DB:       int(properties["DB"].(float64)),
 	})
 
 	pong, err := rdb.Ping(context.Background()).Result()
