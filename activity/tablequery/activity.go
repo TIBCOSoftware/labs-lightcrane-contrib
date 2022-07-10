@@ -90,6 +90,7 @@ func (a *TableQueryActivity) Eval(ctx activity.Context) (done bool, err error) {
 
 func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table.Table, error) {
 	myId := util.ActivityId(context)
+	var err error
 
 	myTable := table.GetTableManager().GetTable(a.activityToTable[myId])
 	queryKeys := a.activityToQueryKeys[myId]
@@ -190,7 +191,7 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table
 				properties["tableSchema"] = tableSchema
 				myTable, err = table.GetTableManager().CreateTable(properties)
 				if nil != err {
-					return nil, err
+					return nil, nil, err
 				}
 			}
 

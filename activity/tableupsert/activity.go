@@ -79,6 +79,7 @@ func (a *TableUpsertActivity) Eval(ctx activity.Context) (done bool, err error) 
 
 func (a *TableUpsertActivity) getTable(context activity.Context) (table.Table, error) {
 	myId := util.ActivityId(context)
+	var err error
 
 	myTable := table.GetTableManager().GetTable(a.activityToTable[myId])
 	if nil == myTable {
