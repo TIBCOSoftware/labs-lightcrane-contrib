@@ -188,7 +188,10 @@ func (a *TableQueryActivity) getTable(context activity.Context) ([]string, table
 				properties["indices"] = indexible
 				properties["tablename"] = tablename
 				properties["tableSchema"] = tableSchema
-				myTable = table.GetTableManager().CreateTable(properties)
+				myTable, err = table.GetTableManager().CreateTable(properties)
+				if nil != err {
+					return nil, err
+				}
 			}
 
 			log.Debug("(getTable) init : ", "initialize table done : myTable = ", myTable)
