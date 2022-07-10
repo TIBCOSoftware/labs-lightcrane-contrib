@@ -167,7 +167,10 @@ func (this *SimpletableManager) Lookup(clientID string, config map[string]interf
 				properties["indices"] = indexible
 				properties["tablename"] = tablename
 				properties["tableSchema"] = tableSchema
-				myTable = table.GetTableManager().CreateTable(properties)
+				myTable, err = table.GetTableManager().CreateTable(properties)
+				if nil != err {
+					return nil, err
+				}
 			}
 			this.connection[clientID] = myTable
 		}

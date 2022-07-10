@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func NewInMenmory(properties map[string]interface{}) *InMemoryTable {
+func NewInMenmory(properties map[string]interface{}) (*InMemoryTable, error) {
 	myTable := &InMemoryTable{
 		pKey:          properties["pKey"].([]string),
 		indices:       make([][]string, 0),
@@ -21,7 +21,7 @@ func NewInMenmory(properties map[string]interface{}) *InMemoryTable {
 	for index := 0; index < len(indexible); index++ {
 		myTable.GenerateKeys(indexible, make([]string, index+1), 0, len(indexible)-1, 0, index+1)
 	}
-	return myTable
+	return myTable, nil
 }
 
 type InMemoryTable struct {
