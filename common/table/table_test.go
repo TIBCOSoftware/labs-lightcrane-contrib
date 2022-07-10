@@ -41,7 +41,7 @@ func TestInMemoryUpsert(t *testing.T) {
 		"tablename":   "inMemory",
 		"tableSchema": tableSchema,
 	}
-	myTable := GetTableManager().CreateTable(properties)
+	myTable, _ := GetTableManager().CreateTable(properties)
 
 	record, oldRecord := myTable.Upsert(map[string]interface{}{
 		"ProjectID": "1234567890",
@@ -87,9 +87,9 @@ func TestRedisInsert(t *testing.T) {
 		"tableSchema": tableSchema,
 		"Addr":        "192.168.1.152:6379",
 		"Password":    "eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81",
-		"DB":          0,
+		"DB":          float64(0),
 	}
-	myTable := GetTableManager().CreateTable(properties)
+	myTable, _ := GetTableManager().CreateTable(properties)
 
 	record, oldRecord := myTable.Insert(map[string]interface{}{
 		"ProjectID": "1234567890z",

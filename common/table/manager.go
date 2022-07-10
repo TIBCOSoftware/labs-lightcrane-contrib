@@ -42,7 +42,7 @@ func (this *TableManager) GetTable(tablename string) Table {
 	return this.tables[tablename]
 }
 
-func (this *TableManager) CreateTable(properties map[string]interface{}) Table {
+func (this *TableManager) CreateTable(properties map[string]interface{}) (Table, error) {
 
 	tablename := properties["tablename"].(string)
 	tableType := ""
@@ -50,6 +50,7 @@ func (this *TableManager) CreateTable(properties map[string]interface{}) Table {
 		tableType = properties["tableType"].(string)
 	}
 	table := this.tables[tablename]
+	var err error
 	if nil == table {
 		mux.Lock()
 		defer mux.Unlock()
@@ -57,15 +58,15 @@ func (this *TableManager) CreateTable(properties map[string]interface{}) Table {
 		if nil == table {
 			log.Info("Table type : ", tableType)
 			if REDIS == tableType {
-				table = NewRedis(properties)
+				table, err = NewRedis(properties)
 			} else {
-				table = NewInMenmory(properties)
+				table, err = NewInMenmory(properties)
 			}
 			this.tables[tablename] = table
 		}
 	}
 
-	return table
+	return table, err
 }
 
 type Table interface {

@@ -13,7 +13,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func NewRedis(properties map[string]interface{}) *Redis {
+func NewRedis(properties map[string]interface{}) (*Redis, error) {
 	log.Info("Go Redis Tutorial")
 
 	rdb := redis.NewClient(&redis.Options{
@@ -22,14 +22,16 @@ func NewRedis(properties map[string]interface{}) *Redis {
 		DB:       int(properties["DB"].(float64)),
 	})
 
-	pong, err := rdb.Ping(context.Background()).Result()
-	log.Info(pong, err)
+	_, err := rdb.Ping(context.Background()).Result()
+	if nil != err {
+		return nil, err
+	}
 
 	return &Redis{
 		rdb:         rdb,
 		pKey:        properties["pKey"].([]string),
 		tableSchema: properties["tableSchema"].(*Schema),
-	}
+	}, nil
 }
 
 type Redis struct {
