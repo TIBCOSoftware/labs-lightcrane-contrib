@@ -162,14 +162,18 @@ func BuildFlogoApp(
 						}
 					}
 				}
-			} // else if "App.Replicas" == name {
-			//	replicas, _ = strconv.Atoi(util.GetPropertyElement("Value", property).(string))
-			//}
+			}
 		}
 	}
 
 	replicas = 1
 	if nil != applicationPipelineDescriptor["properties"] {
+		applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
+			"Name":  "App.ID",
+			"Value": applicationName,
+			"Type":  "string",
+		})
+
 		configByte, err := json.Marshal(config)
 		if nil == err {
 			applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
@@ -189,13 +193,19 @@ func BuildFlogoApp(
 					})
 				}
 
-				controllerPropertiesByte, err := json.Marshal(ha["controllerProperties"])
-				if nil == err {
-					applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
-						"Name":  "App.HA.Properties",
-						"Value": string(controllerPropertiesByte),
-						"Type":  "string",
-					})
+				if nil != ha["controllerProperties"] {
+					controllerProperties := ha["controllerProperties"].(map[string]interface{})
+					if nil == controllerProperties["synchGroupID"] {
+						controllerProperties["synchGroupID"] = applicationName
+					}
+					controllerPropertiesByte, err := json.Marshal(controllerProperties)
+					if nil == err {
+						applicationPipelineDescriptor["properties"] = append(applicationPipelineDescriptor["properties"].([]interface{}), map[string]interface{}{
+							"Name":  "App.HA.Properties",
+							"Value": string(controllerPropertiesByte),
+							"Type":  "string",
+						})
+					}
 				}
 			} else {
 				log.Warnf("No HA setup in config.json")
