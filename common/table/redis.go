@@ -11,6 +11,8 @@ import (
 	"strconv"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 )
 
 func NewRedis(properties map[string]interface{}) (*Redis, error) {
@@ -27,7 +29,16 @@ func NewRedis(properties map[string]interface{}) (*Redis, error) {
 		return nil, err
 	}
 
+	// Get a new mutex for synchronizing pipelines.
+	mutexname := "air-pipeline-mutex"
+	if nil != properties["pipelineName"] {
+		mutexname = properties["pipelineName"].(string)
+	}
+	pool := goredis.NewPool(rdb)
+	mutex := redsync.New(pool).NewMutex(mutexname)
+
 	return &Redis{
+		mutex:       mutex,
 		rdb:         rdb,
 		pKey:        properties["pKey"].([]string),
 		tableSchema: properties["tableSchema"].(*Schema),
@@ -35,6 +46,7 @@ func NewRedis(properties map[string]interface{}) (*Redis, error) {
 }
 
 type Redis struct {
+	mutex       *redsync.Mutex
 	rdb         *redis.Client
 	pKey        []string
 	tableSchema *Schema
@@ -111,6 +123,11 @@ func (this *Redis) Insert(data map[string]interface{}) (*Record, *Record) {
 
 	var oldRecord Record
 	var record Record
+
+	// grab lock.
+	if err := this.mutex.Lock(); err != nil {
+		panic(err)
+	}
 	ctx := context.Background()
 	err := this.rdb.Watch(ctx, func(tx *redis.Tx) error {
 		oldRecordString, err := this.rdb.Get(ctx, redisKey).Result()
@@ -138,6 +155,11 @@ func (this *Redis) Insert(data map[string]interface{}) (*Record, *Record) {
 		return nil
 
 	}, redisKey)
+
+	// Release lock.
+	if ok, err := this.mutex.Unlock(); !ok || err != nil {
+		panic("unlock failed")
+	}
 
 	if nil != err {
 		log.Error("Error when insert to Redis DB : ", err)
@@ -168,6 +190,11 @@ func (this *Redis) Upsert(data map[string]interface{}) (*Record, *Record) {
 
 	var oldRecord Record
 	var record Record
+
+	// grab lock.
+	if err := this.mutex.Lock(); err != nil {
+		panic(err)
+	}
 	ctx := context.Background()
 	err := this.rdb.Watch(ctx, func(tx *redis.Tx) error {
 		// get old record
@@ -190,6 +217,11 @@ func (this *Redis) Upsert(data map[string]interface{}) (*Record, *Record) {
 
 		return nil
 	}, redisKey)
+
+	// Release lock.
+	if ok, err := this.mutex.Unlock(); !ok || err != nil {
+		panic("unlock failed")
+	}
 
 	if nil != err {
 		return nil, nil
