@@ -31,8 +31,8 @@ func NewRedis(properties map[string]interface{}) (*Redis, error) {
 
 	// Get a new mutex for synchronizing pipelines.
 	mutexname := "air-pipeline-mutex"
-	if nil != properties["pipelineName"] {
-		mutexname = properties["pipelineName"].(string)
+	if nil != properties["synchGroupID"] {
+		mutexname = properties["synchGroupID"].(string)
 	}
 	pool := goredis.NewPool(rdb)
 	mutex := redsync.New(pool).NewMutex(mutexname)
