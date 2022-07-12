@@ -8,6 +8,7 @@ package table
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/go-redis/redis/v8"
@@ -16,12 +17,14 @@ import (
 )
 
 func NewRedis(properties map[string]interface{}) (*Redis, error) {
-	log.Info("Go Redis Tutorial")
+	log.Info("(NewRedis) Entering ........")
+
+	DB := int(properties["DB"].(float64))
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     properties["Addr"].(string),
 		Password: properties["Password"].(string),
-		DB:       int(properties["DB"].(float64)),
+		DB:       DB,
 	})
 
 	_, err := rdb.Ping(context.Background()).Result()
@@ -30,12 +33,14 @@ func NewRedis(properties map[string]interface{}) (*Redis, error) {
 	}
 
 	// Get a new mutex for synchronizing pipelines.
-	mutexname := "air-pipeline-mutex"
+	mutexname := "default"
 	if nil != properties["synchGroupID"] {
 		mutexname = properties["synchGroupID"].(string)
 	}
+	mutexname = fmt.Sprintf("%d-%s", DB, mutexname)
 	pool := goredis.NewPool(rdb)
 	mutex := redsync.New(pool).NewMutex(mutexname)
+	log.Info("(NewRedis) Get mutex for group : ", mutexname)
 
 	return &Redis{
 		mutex:       mutex,
@@ -69,22 +74,22 @@ func (this *Redis) GetAll() ([]*Record, bool) {
 }
 
 func (this *Redis) Get(searchKey []string, data map[string]interface{}) ([]*Record, bool) {
-	log.Info("(Get) searchKey : ", searchKey)
-	log.Info("(Get) data : ", data)
-	log.Info("(Get) pKey : ", this.pKey)
+	log.Info("(Redis.Get) searchKey : ", searchKey)
+	log.Info("(Redis.Get) data : ", data)
+	log.Info("(Redis.Get) pKey : ", this.pKey)
 
 	pKeyHash, pKeyValueHash := ConstructKey(this.pKey, data)
 	searchKeyHash, searchKeyValueHash := ConstructKey(searchKey, data)
 
-	log.Info("(Get) pKeyValueHash : ", pKeyValueHash)
-	log.Info("(Get) searchKeyValueHash : ", searchKeyValueHash)
+	log.Info("(Redis.Get) pKeyValueHash : ", pKeyValueHash)
+	log.Info("(Redis.Get) searchKeyValueHash : ", searchKeyValueHash)
 
 	if searchKeyHash != pKeyHash {
 		return make([]*Record, 0), true
 	}
 
 	redisKey := strconv.FormatUint(pKeyValueHash.Id, 10)
-	log.Info("(Get) redisKey : ", redisKey)
+	log.Info("(Redis.Get) redisKey : ", redisKey)
 
 	ctx := context.Background()
 	recordString, err := this.rdb.Get(ctx, redisKey).Result()
@@ -112,22 +117,25 @@ func (this *Redis) Get(searchKey []string, data map[string]interface{}) ([]*Reco
 }
 
 func (this *Redis) Insert(data map[string]interface{}) (*Record, *Record) {
-	log.Info("(Insert) data : ", data)
-	log.Info("(Insert) pKey : ", this.pKey)
+	log.Info("(Redis.Insert) data : ", data)
+	log.Info("(Redis.Insert) pKey : ", this.pKey)
 
 	_, pKeyValueHash := ConstructKey(this.pKey, data)
 	redisKey := strconv.FormatUint(pKeyValueHash.Id, 10)
 
-	log.Info("(Insert) pKeyValueHash : ", pKeyValueHash)
-	log.Info("(Insert) redisKey : ", redisKey)
+	log.Info("(Redis.Insert) pKeyValueHash : ", pKeyValueHash)
+	log.Info("(Redis.Insert) redisKey : ", redisKey)
 
 	var oldRecord Record
 	var record Record
 
 	// grab lock.
 	if err := this.mutex.Lock(); err != nil {
-		panic(err)
+		log.Error("(Redis.Insert) table lock failed.")
+	} else {
+		log.Info("(Redis.Insert) table locked.")
 	}
+
 	ctx := context.Background()
 	err := this.rdb.Watch(ctx, func(tx *redis.Tx) error {
 		oldRecordString, err := this.rdb.Get(ctx, redisKey).Result()
@@ -158,7 +166,9 @@ func (this *Redis) Insert(data map[string]interface{}) (*Record, *Record) {
 
 	// Release lock.
 	if ok, err := this.mutex.Unlock(); !ok || err != nil {
-		panic("unlock failed")
+		log.Error("(Redis.Insert) table unlock failed.")
+	} else {
+		log.Info("(Redis.Insert) table unlocked.")
 	}
 
 	if nil != err {
@@ -179,22 +189,25 @@ func (this *Redis) Insert(data map[string]interface{}) (*Record, *Record) {
 }
 
 func (this *Redis) Upsert(data map[string]interface{}) (*Record, *Record) {
-	log.Info("(Upsert) data : ", data)
-	log.Info("(Upsert) pKey : ", this.pKey)
+	log.Info("(Redis.Upsert) data : ", data)
+	log.Info("(Redis.Upsert) pKey : ", this.pKey)
 
 	_, pKeyValueHash := ConstructKey(this.pKey, data)
 	redisKey := strconv.FormatUint(pKeyValueHash.Id, 10)
 
-	log.Info("(Upsert) pKeyValueHash : ", pKeyValueHash)
-	log.Info("(Upsert) redisKey : ", redisKey)
+	log.Info("(Redis.Upsert) pKeyValueHash : ", pKeyValueHash)
+	log.Info("(Redis.Upsert) redisKey : ", redisKey)
 
 	var oldRecord Record
 	var record Record
 
 	// grab lock.
 	if err := this.mutex.Lock(); err != nil {
-		panic(err)
+		log.Error("(Redis.Upsert) table lock failed.")
+	} else {
+		log.Info("(Redis.Upsert) table locked.")
 	}
+
 	ctx := context.Background()
 	err := this.rdb.Watch(ctx, func(tx *redis.Tx) error {
 		// get old record
@@ -220,7 +233,9 @@ func (this *Redis) Upsert(data map[string]interface{}) (*Record, *Record) {
 
 	// Release lock.
 	if ok, err := this.mutex.Unlock(); !ok || err != nil {
-		panic("unlock failed")
+		log.Error("(Redis.Upsert) table unlock failed.")
+	} else {
+		log.Info("(Redis.Upsert) table unlocked.")
 	}
 
 	if nil != err {
@@ -231,7 +246,7 @@ func (this *Redis) Upsert(data map[string]interface{}) (*Record, *Record) {
 }
 
 func (this *Redis) Delete(data map[string]interface{}) *Record {
-	log.Info("(Delete) data : ", data)
+	log.Info("(Redis.Delete) data : ", data)
 
 	return nil
 }
