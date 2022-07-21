@@ -5,7 +5,10 @@ import (
 )
 
 type Settings struct {
-	Port string `md:"Port"`
+	Port      string `md:"Port"`
+	EnableTLS bool   `md:"enableTLS"` // Enable TLS on the server
+	CertFile  string `md:"certFile"`  // The path to PEM encoded server certificate
+	KeyFile   string `md:"keyFile"`   // The path to PEM encoded server key
 }
 
 type HandlerSettings struct {
