@@ -17,11 +17,23 @@
 			"name": "Port",
 			"required": true,
 			"type": "string",
-			"display": {
-			"name": "Port",
-				"description" : "The port for the trigger to listen to"
-			}
-		}
+			"description" : "The port for the trigger to listen to"
+		},
+    	{
+    		"name":"enableTLS",
+    		"type":"boolean",
+    		"description": "Enable TLS on the server"
+    	},
+    	{
+    		"name": "certFile",
+    		"type":"string",
+    		"description": "The path to PEM encoded server certificate"
+    	},
+    	{
+    		"name": "keyFile",
+    		"type":"string",
+    		"description": "The path to PEM encoded server key"
+   		}
 	],
 	"handler": {
 		"settings": [
