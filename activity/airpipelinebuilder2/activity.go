@@ -279,16 +279,19 @@ func (a *Activity) Eval(ctx activity.Context) (done bool, err error) {
 	        Construct Pipeline
 	**********************************/
 
-	descriptorString, pipeline, runner, ports, replicas, err := model.BuildFlogoApp(
+	descriptorString, pipeline, extras, runner, ports, replicas, err := model.BuildFlogoApp(
 		a.template,
 		applicationName,
 		applicationPipelineDescriptor,
-		gProperties,
 		config,
 	)
 
 	descriptor := make(map[string]interface{})
 	descriptor[oFlogoApplicationDescriptor] = string(descriptorString)
+
+	for _, extra := range extras {
+		gProperties = append(gProperties, extra)
+	}
 
 	/*********************************
 	    Construct Dynamic Parameter

@@ -27,20 +27,19 @@ func BuildFlogoApp(
 	template *FlogoTemplateLibrary,
 	applicationName string,
 	applicationPipelineDescriptor map[string]interface{},
-	gProperties []interface{},
 	config map[string]interface{},
-) (descriptorString string, pipeline Pipeline, runner interface{}, ports []interface{}, replicas int, err error) {
+) (descriptorString string, pipeline Pipeline, extra []interface{}, runner interface{}, ports []interface{}, replicas int, err error) {
 
 	log.Info("[airmodel.BuildFlogoApp] entering ........ ")
 	defer log.Info("[airmodel.BuildFlogoApp] Exit ........ ")
 
 	if "" == applicationName {
-		return "", Pipeline{}, nil, nil, -1, errors.New("Invalid Application Name ... ")
+		return "", Pipeline{}, nil, nil, nil, -1, errors.New("Invalid Application Name ... ")
 	}
 	log.Info("[airmodel.BuildFlogoApp]  Name : ", applicationName)
 
 	if nil == applicationPipelineDescriptor {
-		return "", Pipeline{}, nil, nil, -1, errors.New("Invalid Application Pipeline Descriptor ... ")
+		return "", Pipeline{}, nil, nil, nil, -1, errors.New("Invalid Application Pipeline Descriptor ... ")
 	}
 	log.Info("[airmodel.BuildFlogoApp]  Pipeline Descriptor : ", applicationPipelineDescriptor)
 
@@ -137,12 +136,13 @@ func BuildFlogoApp(
 		}
 	}
 
+	extra = make([]interface{}, 0)
 	if nil != applicationPipelineDescriptor["extra"] {
 		extraArray := applicationPipelineDescriptor["extra"].([]interface{})
 		for _, property := range extraArray {
 			name := util.GetPropertyElement("Name", property).(string)
 			if !strings.HasPrefix(name, "App.") {
-				gProperties = append(gProperties, map[string]interface{}{
+				extra = append(extra, map[string]interface{}{
 					"Name":  name,
 					"Value": util.GetPropertyElement("Value", property),
 					"Type":  util.GetPropertyElement("Type", property),
@@ -219,7 +219,7 @@ func BuildFlogoApp(
 
 	descriptorString, err = pipeline.Build()
 
-	return descriptorString, pipeline, runner, ports, replicas, err
+	return descriptorString, pipeline, extra, runner, ports, replicas, err
 }
 
 func parseName(fullname string) (string, string) {
