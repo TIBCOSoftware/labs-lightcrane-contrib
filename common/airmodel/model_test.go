@@ -15,7 +15,7 @@ func TestBuildTemplates(t *testing.T) {
 		t.Fatalf("Error : %v", err)
 	}
 
-	appname := "air_description_sample01"
+	appname := "air_description_sample03"
 
 	applicationPipelineDescriptor, _ := FromFile(fmt.Sprintf("./%s.json", appname))
 	applicationPipelineDescriptor["properties"] = []interface{}{
@@ -26,11 +26,10 @@ func TestBuildTemplates(t *testing.T) {
 	}
 	fmt.Println("applicationPipelineDescriptor before ====", applicationPipelineDescriptor)
 
-	descriptorString, pipeline, _, _, replicas, err := BuildFlogoApp(
+	descriptorString, pipeline, extra, _, _, replicas, err := BuildFlogoApp(
 		templateLibrary,
 		"test_pipeline",
 		applicationPipelineDescriptor,
-		[]interface{}{},
 		map[string]interface{}{
 			"HA": map[string]interface{}{
 				"controllerProperties": map[string]interface{}{
@@ -41,6 +40,7 @@ func TestBuildTemplates(t *testing.T) {
 		},
 	)
 	fmt.Println("applicationPipelineDescriptor after ====", applicationPipelineDescriptor)
+	fmt.Println("extra ====", extra)
 	fmt.Println("replicas ====", replicas)
 	fmt.Println("err ====", err)
 	controllerPropertiesByte, err := json.Marshal(applicationPipelineDescriptor)
